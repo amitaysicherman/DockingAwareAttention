@@ -27,7 +27,7 @@ def fold_protein(sequence, token):
     }
     data = {
         "sequence": sequence,
-        "model": "esm3-medium-2024-08",
+        "model": "esm3-large-2024-03",
         "potential_sequence_of_concern": False
     }
     api_url = "https://forge.evolutionaryscale.ai/api/v1/fold"
