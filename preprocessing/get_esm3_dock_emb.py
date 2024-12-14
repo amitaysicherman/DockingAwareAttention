@@ -93,13 +93,16 @@ if __name__ == "__main__":
         ids = f.read().splitlines()
 
     output_base_dir = "datasets/ecreact/proteins/"
+
     for id_, sequence in tqdm(zip(ids, sequences), total=len(ids)):
         if len(sequence) == 0:
+            continue
+        output_dir = f"{output_base_dir}/{id_}"
+        if os.path.exists(output_dir):
             continue
         fold, embeddings = esm3_dock_emb.get_fold_and_embedding(sequence)
         if fold is None or embeddings is None:
             continue
-        output_dir = f"{output_base_dir}/{id_}"
         os.makedirs(output_dir, exist_ok=True)
 
         to_pdb(fold, sequence, f"{output_dir}/fold.pdb")
