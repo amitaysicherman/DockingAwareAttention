@@ -69,10 +69,10 @@ class ESM3FoldEmbedding:
                     return fold, embeddings
                 else:
                     print(f"Retry: {i}")
-                    time.sleep(self.sleep_time)
+                    # time.sleep(self.sleep_time)
             except Exception as e:
                 print(f"Error: {e}")
-                time.sleep(self.sleep_time)
+                # time.sleep(self.sleep_time)
         return None, None
 
 
@@ -96,8 +96,10 @@ if __name__ == "__main__":
     output_base_dir = "datasets/ecreact/proteins/"
     protein_manager = ProteinsManager()
     for id_, sequence in tqdm(zip(ids, sequences), total=len(ids)):
+
         if len(sequence) == 0:
             continue
+
         chunk = protein_manager.get_chunk(id_)
         output_dir = f"{output_base_dir}/chunk_{chunk}/{id_}"
         if os.path.exists(output_dir):
