@@ -67,12 +67,8 @@ class ESM3FoldEmbedding:
                 fold, embeddings = self._get_fold_and_embedding(protein_seq)
                 if fold is not None and embeddings is not None:
                     return fold, embeddings
-                else:
-                    print(f"Retry: {i}")
-                    # time.sleep(self.sleep_time)
             except Exception as e:
-                print(f"Error: {e}")
-                # time.sleep(self.sleep_time)
+                pass
         return None, None
 
 
