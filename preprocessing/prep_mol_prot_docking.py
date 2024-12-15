@@ -20,11 +20,16 @@ for line in lines:
     protein_id = protein_manager.get_id(ec)
     pdb_file = protein_manager.get_pdb_file(protein_id)
     protein_base_dir = protein_manager.get_base_dir(protein_id)
-    if not pdb_file or not os.path.exists(pdb_file):
+    if not pdb_file:
+        print(f"Missing PDB file for {ec}")
+        continue
+    if not os.path.exists(pdb_file):
+        print(f"PDB file for {ec} does not exist")
         continue
     for mol in mols:
         mol_id = molecule_manager.get_id(mol)
         if not mol_id:
+            print(f"Missing mol ID for {mol}")
             continue
         if (protein_id, mol_id) in seen_pairs:
             continue
