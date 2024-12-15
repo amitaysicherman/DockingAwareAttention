@@ -2,6 +2,28 @@ import os
 import pandas as pd
 import numpy as np
 from preprocessing.tokenizer_utils import tokenize_enzymatic_reaction_smiles
+from rdkit import Chem
+
+from rdkit import rdBase
+
+# Suppress RDKit warnings
+rdBase.DisableLog('rdApp.warning')
+
+
+def remove_mol_stereochemistry(smiles):
+    mol = Chem.MolFromSmiles(smiles)
+    Chem.RemoveStereochemistry(mol)
+    no_stereo_smiles = Chem.MolToSmiles(mol, canonical=True)
+    return no_stereo_smiles
+
+
+def remove_stereochemistry(rxn_smiles):
+    src_ec, tgt = rxn_smiles.split('>>')
+    src, ec = src_ec.split('|')
+    src = ".".join([remove_mol_stereochemistry(m) for m in src.split('.')])
+    tgt = ".".join([remove_mol_stereochemistry(m) for m in tgt.split('.')])
+    return f"{src}|{ec}>>{tgt}"
+
 
 dir_path = os.path.join('datasets', 'ecreact')
 os.makedirs(dir_path, exist_ok=True)
@@ -12,36 +34,39 @@ if not os.path.isfile(file_path):
     os.system(f"curl -o {file_path} {url}")
 os.path.isfile(file_path), file_path
 
-output_file = os.path.join(dir_path, 'ecreact-1.0.txt')
-df = pd.read_csv(file_path)
-txt_file = []
-for i in range(len(df)):
-    txt_file.append(df['rxn_smiles'][i])
-with open(output_file, 'w') as f:
-    for item in txt_file:
-        # item = remove_stereochemistry(item)
-        f.write("%s\n" % item)
-
 output_tokenized_file = os.path.join(dir_path, 'ecreact-1.0-tokenized.txt')
+text_file = os.path.join(dir_path, 'ecreact-1.0.txt')
+
 tokens_lines = []
+text_lines = []
 src = []
 tgt = []
 datasets = []
 all_ec = set()
+all_src_molecules = set()
 
-ecreact = pd.read_csv(file_path)
-with open(output_tokenized_file, 'w') as f2:
-    for i, row in ecreact.iterrows():
-        rnx = row['rxn_smiles']
-        source = row['source']
-        all_ec.add(row['ec'])
-        tokens = tokenize_enzymatic_reaction_smiles(rnx)
-        if tokens:
-            src_, tgt_ = tokens.split(' >> ')
-            src.append(src_)
-            tgt.append(tgt_)
-            datasets.append(source)
-            f2.write(tokens + '\n')
+df = pd.read_csv(file_path)
+for index, row in df.iterrows():
+    rnx = remove_stereochemistry(row['rxn_smiles'])
+    source = row['source']
+    all_ec.add(row['ec'])
+    tokens = tokenize_enzymatic_reaction_smiles(rnx)
+    if tokens:
+        text_lines.append(rnx)
+        molecules = rnx.split('>>')[0].split('|')[0].split('.')
+        all_src_molecules.update(molecules)
+        src_, tgt_ = tokens.split(' >> ')
+        src.append(src_)
+        tgt.append(tgt_)
+        datasets.append(source)
+        tokens_lines.append(tokens)
+
+with open(output_tokenized_file, 'w') as f:
+    for line in tokens_lines:
+        f.write(line + '\n')
+with open(text_file, 'w') as f:
+    for line in text_lines:
+        f.write(line + '\n')
 
 ec_file = os.path.join(dir_path, 'ec.txt')
 with open(ec_file, 'w') as f:
@@ -49,6 +74,11 @@ with open(ec_file, 'w') as f:
         f.write("%s\n" % item)
 print(f"Total EC numbers: {len(all_ec)}")
 
+molecules_file = os.path.join(dir_path, 'molecules.txt')
+with open(molecules_file, 'w') as f:
+    for item in all_src_molecules:
+        f.write("%s\n" % item)
+print(f"Total molecules: {len(all_src_molecules)}")
 
 print(f"Tokenized {len(src)} reactions")
 assert len(src) == len(tgt)
