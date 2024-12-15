@@ -24,7 +24,8 @@ for line in lines:
         print(f"Missing PDB file for {ec}")
         continue
     if not os.path.exists(pdb_file):
-        print(f"PDB file for {ec} does not exist")
+        print()
+        print(f"PDB file {pdb_file} does not exist")
         continue
     for mol in mols:
         mol_id = molecule_manager.get_id(mol)
