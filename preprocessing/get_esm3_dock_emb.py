@@ -43,7 +43,7 @@ def fold_protein(sequence, token):
 
 
 class ESM3FoldEmbedding:
-    def __init__(self, token: str, retry: int = 2, sleep_time: int = 60):
+    def __init__(self, token: str, retry: int = 5, sleep_time: int = 60):
         self.emb_model = ESM3ForgeInferenceClient(model="esmc-6b-2024-12", url="https://forge.evolutionaryscale.ai",
                                                   token=token)
         self.token = token
@@ -95,6 +95,7 @@ if __name__ == "__main__":
 
     output_base_dir = "datasets/ecreact/proteins/"
     protein_manager = ProteinsManager()
+    fail_count = 0
     for id_, sequence in tqdm(zip(ids, sequences), total=len(ids)):
 
         if len(sequence) == 0:
@@ -106,8 +107,10 @@ if __name__ == "__main__":
             continue
         fold, embeddings = esm3_dock_emb.get_fold_and_embedding(sequence)
         if fold is None or embeddings is None:
+            fail_count += 1
             continue
         os.makedirs(output_dir, exist_ok=True)
 
         to_pdb(fold, sequence, f"{output_dir}/fold.pdb")
         np.save(f"{output_dir}/embeddings.npy", embeddings)
+    print(f"Fail count: {fail_count}/{len(ids)}")
