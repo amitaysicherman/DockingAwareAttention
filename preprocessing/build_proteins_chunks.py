@@ -2,7 +2,7 @@ import os
 
 if __name__ == "__main__":
     import shutil
-
+    from tqdm import tqdm
     n_chunks = 25
     input_seq_file = "datasets/ecreact/ec_fasta.txt"
     input_ids_file = "datasets/ecreact/ec_ids.txt"
@@ -22,7 +22,7 @@ if __name__ == "__main__":
         output_dir = f"{output_base_dir}/chunk_{i}"
         os.makedirs(output_dir, exist_ok=True)
 
-    for id_ in ids:
+    for id_ in tqdm(ids):
         path_to_fix = f"{output_base_dir}/{id_}"
         if not os.path.exists(path_to_fix):
             continue
