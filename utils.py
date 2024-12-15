@@ -25,16 +25,18 @@ class ProteinsManager:
     def get_id(self, ec):
         return self.ec_to_id[ec]
 
-    def get_pdb_file(self, id_):
+
+    def get_base_dir(self, id_):
         if id_ not in self.id_to_chunk:
             return None
         chunk = self.get_chunk(id_)
-        return f"datasets/ecreact/proteins/{chunk}/{id_}/fold.pdb"
-    def get_emb_file(self, id_):
-        return f"datasets/ecreact/proteins/{id_}/embeddings.npy"
+        return f"datasets/ecreact/proteins/chunk_{chunk}/{id_}"
+    def get_pdb_file(self, id_):
+        base_dir = self.get_base_dir(id_)
+        if not base_dir:
+            return None
+        return f"{base_dir}/fold.pdb"
 
-    def get_base_dir(self, id_):
-        return f"datasets/ecreact/proteins/{id_}/"
 class MoleculeManager:
     def __init__(self):
         self.mol_to_id = {}
