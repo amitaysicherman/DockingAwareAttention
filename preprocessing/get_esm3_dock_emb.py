@@ -79,6 +79,7 @@ class ESM3FoldEmbedding:
 if __name__ == "__main__":
     import argparse
     from tqdm import tqdm
+    from utils import ProteinsManager
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--token", type=str, required=True)
@@ -93,11 +94,12 @@ if __name__ == "__main__":
         ids = f.read().splitlines()
 
     output_base_dir = "datasets/ecreact/proteins/"
-
+    protein_manager = ProteinsManager()
     for id_, sequence in tqdm(zip(ids, sequences), total=len(ids)):
         if len(sequence) == 0:
             continue
-        output_dir = f"{output_base_dir}/{id_}"
+        chunk = protein_manager.get_chunk(id_)
+        output_dir = f"{output_base_dir}/chunk_{chunk}/{id_}"
         if os.path.exists(output_dir):
             continue
         fold, embeddings = esm3_dock_emb.get_fold_and_embedding(sequence)
