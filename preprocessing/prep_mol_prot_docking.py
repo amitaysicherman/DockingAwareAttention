@@ -36,7 +36,7 @@ for line in lines:
             continue
         seen_pairs.add((protein_id, mol_id))
         output_dir = f'../{protein_base_dir}/{mol_id}'  # run from DiffDock directory, so need to go up one level
-        cmd = f"{base_cmd} --protein_path '{pdb_file}' --ligand '{mol}' --out_dir '{output_dir}'"
+        cmd = f"{base_cmd} --protein_path '../{pdb_file}' --ligand '{mol}' --out_dir '{output_dir}'"
         cmds.append(cmd)
 print(f"{len(cmds)} docking runs")
 scripts_dir = "DiffDock/scripts"
