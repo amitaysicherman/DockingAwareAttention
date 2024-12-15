@@ -12,6 +12,8 @@ rdBase.DisableLog('rdApp.warning')
 
 def remove_mol_stereochemistry(smiles):
     mol = Chem.MolFromSmiles(smiles)
+    if mol is None:
+        return None
     Chem.RemoveStereochemistry(mol)
     no_stereo_smiles = Chem.MolToSmiles(mol, canonical=True)
     return no_stereo_smiles
@@ -20,8 +22,14 @@ def remove_mol_stereochemistry(smiles):
 def remove_stereochemistry(rxn_smiles):
     src_ec, tgt = rxn_smiles.split('>>')
     src, ec = src_ec.split('|')
-    src = ".".join([remove_mol_stereochemistry(m) for m in src.split('.')])
-    tgt = ".".join([remove_mol_stereochemistry(m) for m in tgt.split('.')])
+    src=[remove_mol_stereochemistry(m) for m in src.split('.')]
+    if None in src:
+        return None
+    tgt = [remove_mol_stereochemistry(m) for m in tgt.split('.')]
+    if None in tgt:
+        return None
+    src = '.'.join(src)
+    tgt = '.'.join(tgt)
     return f"{src}|{ec}>>{tgt}"
 
 
@@ -48,6 +56,8 @@ all_src_molecules = set()
 df = pd.read_csv(file_path)
 for index, row in df.iterrows():
     rnx = remove_stereochemistry(row['rxn_smiles'])
+    if rnx is None:
+        continue
     source = row['source']
     all_ec.add(row['ec'])
     tokens = tokenize_enzymatic_reaction_smiles(rnx)
