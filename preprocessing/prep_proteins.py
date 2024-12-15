@@ -7,6 +7,10 @@ def ec_to_id_fasta(ec):
     """
     Fetch the UniProt ID and FASTA sequence for a given EC number.
     """
+    ec_parts = ec.split(".")
+    if len(ec_parts) < 4 or not all(part.isdigit() for part in ec_parts[:4]):
+        print(f"Error: {ec} (not a valid EC number)")
+        return "", ""
     try:
         results = uniprot.search(f"ec:{ec}", limit=1, frmt="fasta", size=1)
         results = results.splitlines()
