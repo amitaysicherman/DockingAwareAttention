@@ -3,6 +3,7 @@ import os
 if __name__ == "__main__":
     import shutil
     from tqdm import tqdm
+
     n_chunks = 25
     input_seq_file = "datasets/ecreact/ec_fasta.txt"
     input_ids_file = "datasets/ecreact/ec_ids.txt"
@@ -22,17 +23,7 @@ if __name__ == "__main__":
         output_dir = f"{output_base_dir}/chunk_{i}"
         os.makedirs(output_dir, exist_ok=True)
 
-    for id_ in tqdm(ids):
-        path_to_fix = f"{output_base_dir}/{id_}"
-        if not os.path.exists(path_to_fix):
-            continue
-        if id_ not in id_to_chunk_dict:
-            continue
-        chunk = id_to_chunk_dict[id_]
-        new_path = f"{output_base_dir}/chunk_{chunk}/{id_}"
-        # move the directory from the old path to the new path
-        shutil.move(path_to_fix, new_path)
     # save the mapping
-    with open("datasets/ecreact/id_to_chunk.txt", "w") as f:
+    with open("datasets/ecreact/proteins/id_to_chunk.txt", "w") as f:
         for id_, chunk in id_to_chunk_dict.items():
             f.write(f"{id_} {chunk}\n")
