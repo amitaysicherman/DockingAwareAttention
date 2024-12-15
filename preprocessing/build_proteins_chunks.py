@@ -26,6 +26,8 @@ if __name__ == "__main__":
         path_to_fix = f"{output_base_dir}/{id_}"
         if not os.path.exists(path_to_fix):
             continue
+        if id_ not in id_to_chunk_dict:
+            continue
         chunk = id_to_chunk_dict[id_]
         new_path = f"{output_base_dir}/chunk_{chunk}/{id_}"
         # move the directory from the old path to the new path
