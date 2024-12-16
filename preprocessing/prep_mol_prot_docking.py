@@ -28,6 +28,7 @@ for line in lines:
         print(f"PDB file {pdb_file} does not exist")
         continue
     for mol in mols:
+
         mol_id = molecule_manager.get_id(mol)
         if not mol_id:
             print(f"Missing mol ID for {mol}")
@@ -35,7 +36,10 @@ for line in lines:
         if (protein_id, mol_id) in seen_pairs:
             continue
         seen_pairs.add((protein_id, mol_id))
+
         output_dir = f'../{protein_base_dir}/{mol_id}'  # run from DiffDock directory, so need to go up one level
+        if os.path.exists(output_dir):
+            continue
         cmd = f"{base_cmd} --protein_path '../{pdb_file}' --ligand '{mol}' --out_dir '{output_dir}'"
         cmds.append(cmd)
 print(f"{len(cmds)} docking runs")

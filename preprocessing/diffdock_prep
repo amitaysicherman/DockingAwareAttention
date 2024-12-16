@@ -1,0 +1,6 @@
+# In this work we use diffdock model.
+# Download the model from https://github.com/gcorso/DiffDock.git into the main directory
+# Create diffenv environment using the provided environment.yml file
+# after creating the environment, and preparing the scrip using the prep_mol_prot_docking.py script,
+# move to the DiffDock directory and run the scripts.
+
