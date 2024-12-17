@@ -1,4 +1,4 @@
-from utils import ECType
+from utils import ECType, tokens_to_canonical_smiles
 from dataset import SeqToSeqDataset
 from preprocessing.tokenizer_utils import TOKENIZER_DIR, get_ec_tokens
 
@@ -6,32 +6,14 @@ from transformers import T5Config
 from transformers import PreTrainedTokenizerFast
 from transformers import Trainer, TrainingArguments, TrainerCallback
 from transformers import DataCollatorForSeq2Seq
-from rdkit import Chem
 import torch
 from torch.utils.data import DataLoader
 from model import CustomT5Model
-import rdkit.rdBase as rkrb
-import rdkit.RDLogger as rkl
-import json
+
 import os
-import re
 from tqdm import tqdm
 
 DEBUG = False
-logger = rkl.logger()
-logger.setLevel(rkl.ERROR)
-rkrb.DisableLog("rdApp.error")
-
-
-def tokens_to_canonical_smiles(tokenizer, tokens, remove_stereo=False):
-    smiles = tokenizer.decode(tokens, skip_special_tokens=True)
-    smiles = smiles.replace(" ", "")
-    mol = Chem.MolFromSmiles(smiles)
-    if mol is None:
-        return smiles
-    if remove_stereo:
-        Chem.RemoveStereochemistry(mol)
-    return Chem.MolToSmiles(mol, canonical=True)
 
 
 def k_name(filename, k):
@@ -79,13 +61,11 @@ class EvalGen(TrainerCallback):
         super().__init__()
         self.model = model
         self.tokenizer = tokenizer
-        self.valid_data_loader = DataLoader(valid_ds, batch_size=batch_size, num_workers=0,
-                                            collate_fn=CustomDataCollatorForSeq2Seq(tokenizer, model=model),
-                                            shuffle=False, drop_last=False)
-
-        self.test_data_loader = DataLoader(test_ds, batch_size=batch_size, num_workers=0,
-                                           collate_fn=CustomDataCollatorForSeq2Seq(tokenizer, model=model),
-                                           shuffle=False, drop_last=False)
+        args = {"batch_size": batch_size, "num_workers": 0, "shuffle": False, "drop_last": False}
+        self.valid_data_loader = DataLoader(valid_ds, collate_fn=CustomDataCollatorForSeq2Seq(tokenizer, model=model),
+                                            **args)
+        self.test_data_loader = DataLoader(test_ds, collate_fn=CustomDataCollatorForSeq2Seq(tokenizer, model=model),
+                                           **args)
         self.output_base = output_base
         os.makedirs(output_base, exist_ok=True)
 
@@ -99,32 +79,12 @@ class EvalGen(TrainerCallback):
             eval_dataset(self.model, self.tokenizer, self.test_data_loader, test_output_file)
         self.model.train()
 
-    # def on_train_begin(self, args, state, control, **kwargs):
-    #     self.run_eval(0)
-
     def on_epoch_end(self, args, state, control, **kwargs):
         self.run_eval(state.epoch)
 
 
 def args_to_name(ec_type, daa_type, emb_dropout, add_ec_tokens):
     return f"ec-{ec_type}_daa-{daa_type}_emb-{emb_dropout}_ectokens-{add_ec_tokens}"
-
-
-def load_pretrained_model():
-    base_dir = "results/uspto"
-    cp_dirs = os.listdir(base_dir)
-    cp_dirs = [f for f in cp_dirs if re.match(r"checkpoint-\d+", f)]
-    cp_dirs = sorted(cp_dirs, key=lambda x: int(x.split("-")[1]))
-    last_cp = f"{base_dir}/{cp_dirs[-1]}"
-    trainer_state_file = f"{last_cp}/trainer_state.json"
-    if not os.path.exists(trainer_state_file):
-        raise ValueError(f"trainer_state.json not found in {base_dir}")
-    with open(trainer_state_file) as f:
-        trainer_state = json.load(f)
-    return trainer_state["best_model_checkpoint"]
-
-
-ec_type, daa_type = daa_type, emb_dropout = emb_dropout
 
 
 def get_tokenizer_and_model(ec_type, daa_type, emb_dropout, add_ec_tokens):
@@ -159,9 +119,8 @@ class CustomDataCollatorForSeq2Seq(DataCollatorForSeq2Seq):
         return batch
 
 
-#    main(ec_type=ec_type,daa_type=args.daa_type, batch_size=args.batch_size, batch_size_factor=args.batch_size_factor,
-#         learning_rate=args.learning_rate, max_length=args.max_length, emb_dropout=args.emb_dropout)
-def main(ec_type, daa_type, batch_size, batch_size_factor, learning_rate, max_length, emb_dropout, add_ec_tokens):
+def main(ec_type, daa_type, batch_size, batch_size_factor, learning_rate, max_length, emb_dropout, add_ec_tokens,
+         epochs):
     tokenizer, model = get_tokenizer_and_model(ec_type, daa_type=daa_type, emb_dropout=emb_dropout,
                                                add_ec_tokens=add_ec_tokens)
     common_ds_args = {"tokenizer": tokenizer, "max_length": max_length}
@@ -174,7 +133,6 @@ def main(ec_type, daa_type, batch_size, batch_size_factor, learning_rate, max_le
     print(f"Run name: {run_name}")
     # Training arguments
     output_dir = f"results/{run_name}"
-    num_train_epochs = 5
     resume_from_checkpoint = False
     if os.path.exists(output_dir):
         dirs_in_output = os.listdir(output_dir)
@@ -184,10 +142,10 @@ def main(ec_type, daa_type, batch_size, batch_size_factor, learning_rate, max_le
                 break
     training_args = TrainingArguments(
         output_dir=output_dir,
-        num_train_epochs=num_train_epochs,
+        num_train_epochs=epochs,
         warmup_ratio=0.05,
-        logging_steps=1 / (num_train_epochs * num_train_epochs),
-        save_steps=1 / num_train_epochs,
+        logging_steps=1 / (epochs * epochs),
+        save_steps=1 / epochs,
         save_total_limit=3,
         save_strategy="steps",
         eval_strategy="no",
@@ -201,7 +159,6 @@ def main(ec_type, daa_type, batch_size, batch_size_factor, learning_rate, max_le
         gradient_accumulation_steps=batch_size_factor,
         save_safetensors=False,
         group_by_length=True,
-
     )
 
     # Initialize Trainer
@@ -229,6 +186,7 @@ if __name__ == '__main__':
     parser.add_argument("--max_length", type=int, default=200)
     parser.add_argument("--add_ec_tokens", type=int, default=0)
     parser.add_argument("--emb_dropout", default=0.0, type=float)
+    parser.add_argument("--epochs", type=int, default=10)
 
     args = parser.parse_args()
     ec_type = ECType(args.ec_type)
@@ -237,4 +195,4 @@ if __name__ == '__main__':
         args.daa_type = 0
     main(ec_type=ec_type, daa_type=args.daa_type, batch_size=args.batch_size, batch_size_factor=args.batch_size_factor,
          learning_rate=args.learning_rate, max_length=args.max_length, emb_dropout=args.emb_dropout,
-         add_ec_tokens=args.add_ec_tokens)
+         add_ec_tokens=args.add_ec_tokens, epochs=args.epochs)

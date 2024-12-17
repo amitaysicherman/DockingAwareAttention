@@ -1,6 +1,8 @@
 import os
 from enum import Enum
 
+from rdkit import Chem
+
 
 class ProteinsManager:
     def __init__(self):
@@ -115,3 +117,14 @@ class ECType(Enum):
     NO_EC = 0
     PAPER = 1
     PRETRAINED = 2
+
+
+def tokens_to_canonical_smiles(tokenizer, tokens, remove_stereo=False):
+    smiles = tokenizer.decode(tokens, skip_special_tokens=True)
+    smiles = smiles.replace(" ", "")
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is None:
+        return smiles
+    if remove_stereo:
+        Chem.RemoveStereochemistry(mol)
+    return Chem.MolToSmiles(mol, canonical=True)

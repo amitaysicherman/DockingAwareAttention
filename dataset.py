@@ -67,7 +67,8 @@ class SeqToSeqDataset(Dataset):
             if os.path.exists(scores_file):
                 with open(scores_file) as f:
                     scores_lines = f.read().splitlines()
-                scores_lines = [np.array([float(s) for s in scores.split()]) for scores in scores_lines]
+                scores_lines = [np.array([float(s) for s in scores.split()]) if len(scores) else None for scores in
+                                scores_lines]
             else:
                 scores_lines = [scores_zero] * len(src_lines)
         assert len(src_lines) == len(tgt_lines) == len(emb_lines) == len(scores_lines)
