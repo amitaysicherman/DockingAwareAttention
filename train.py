@@ -167,6 +167,7 @@ def main(ec_type, daa_type, batch_size, batch_size_factor, learning_rate, max_le
     common_ds_args = {"tokenizer": tokenizer, "max_length": max_length}
     train_dataset = SeqToSeqDataset(["ecreact", "uspto"], "train", weights=[20, 1], **common_ds_args,
                                     add_emb=[True, False])
+
     val_dataset = SeqToSeqDataset(["ecreact"], "valid", **common_ds_args, add_emb=[True])
     test_dataset = SeqToSeqDataset(["ecreact"], "test", **common_ds_args, add_emb=[True])
     run_name = args_to_name(ec_type, daa_type, emb_dropout, add_ec_tokens)

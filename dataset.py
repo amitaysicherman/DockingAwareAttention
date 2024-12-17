@@ -105,21 +105,12 @@ def __getitem__(self, idx):
     return self.data[idx]
 
 
-if "__main__" == __name__:
-    class tok:
-        def __init__(self):
-            self.eos_token_id = 12
-            self.pad_token_id = 0
-            self.eos_token_id = 12
+if __name__ == '__main__':
+    from preprocessing.tokenizer_utils import TOKENIZER_DIR
 
-        def encode(self, s, **kwargs):
-            return [ord(c) for c in s]
+    tokenizer = PreTrainedTokenizerFast.from_pretrained(TOKENIZER_DIR)
 
-        def decode(self, s, **kwargs):
-            return "".join([chr(c) for c in s])
-
-
-    t = tok()
-    ds = SeqToSeqDataset(datasets=["ecreact"], split="test", tokenizer=t, add_emb=[True],max_length=1000)
-
-    print(ds.samples_ids)
+    ds = SeqToSeqDataset(datasets=["ecreact"], split="train", tokenizer=tokenizer, add_emb=[True])
+    print(f"EcReAct train dataset len: {len(ds)}")
+    uspto = SeqToSeqDataset(datasets=["uspto"], split="train", tokenizer=tokenizer, add_emb=[False])
+    print(f"USPTO train dataset len: {len(uspto)}")
