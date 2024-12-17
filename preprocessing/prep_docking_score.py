@@ -83,16 +83,19 @@ def get_reaction_attention_emd(rnx, protein_manager: ProteinsManager, molecule_m
     src, ec = rnx.split("|")
     protein_id = protein_manager.get_id(ec)
     if protein_id is None:
+        print(f"Protein ID not found for {ec}")
         return None
     weights = []
     for mol_smiles in src.split("."):
         mol_id = molecule_manager.get_id(mol_smiles)
         if mol_id is None:
+            print(f"Molecule ID not found for {mol_smiles}")
             continue
         w = get_protein_mol_att(protein_manager, protein_id, mol_id)
         if w is not None:
             weights.append(w)
     if len(weights) == 0:
+        print(f"No weights found for {rnx}")
         return None
     weights = np.array(weights).mean(axis=0)  # Average over all molecules
     weights = np.concatenate([[0], weights, [0]])  # Add start and end tokens
