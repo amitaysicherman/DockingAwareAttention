@@ -54,9 +54,7 @@ class SeqToSeqDataset(Dataset):
 
         with open(f"{input_base}/tgt-{split}.txt") as f:
             tgt_lines = f.read().splitlines()
-        if src_lines[-1] == "" or tgt_lines[-1] == "":
-            src_lines = src_lines[:-1]
-            tgt_lines = tgt_lines[:-1]
+
         if not add_emb:
             emb_lines = [emb_zero] * len(src_lines)
             scores_lines = [scores_zero] * len(src_lines)
@@ -70,6 +68,8 @@ class SeqToSeqDataset(Dataset):
             if os.path.exists(scores_file):
                 with open(scores_file) as f:
                     scores_lines = f.read().splitlines()
+                    if len(scores_lines) == len(src_lines) - 1:  # last line is empty
+                        scores_lines.append("")
                 scores_lines = [np.array([float(s) for s in scores.split()]) if len(scores) else None for scores in
                                 scores_lines]
             else:
@@ -100,10 +100,8 @@ class SeqToSeqDataset(Dataset):
         print(f"Dataset {split} loaded, len: {len(data)} / {len(src_lines)}")
         return data
 
-
     def __len__(self):
         return len(self.data)
-
 
     def __getitem__(self, idx):
         return self.data[idx]
