@@ -2,6 +2,10 @@ import os
 from enum import Enum
 
 from rdkit import Chem
+# Suppress RDKit warnings
+from rdkit import rdBase
+
+rdBase.DisableLog('rdApp.warning')
 
 
 class ProteinsManager:
