@@ -60,9 +60,9 @@ class SeqToSeqDataset(Dataset):
         else:
             ec_lines = [get_ec_from_src(s) for s in src_lines]
             prot_ids = [self.proteins_manager.get_id(ec) if ec is not None else None for ec in ec_lines]
-            emb_files = [self.proteins_manager.get_pdb_file(prot_id) if prot_id is not None else None for prot_id in
+            emb_files = [self.proteins_manager.get_emb_file(prot_id) if prot_id is not None else None for prot_id in
                          prot_ids]
-            emb_lines = [np.load(f, allow_pickle=True) if os.path.exists(f) else None for f in tqdm(emb_files)]
+            emb_lines = [np.load(f) if os.path.exists(f) else None for f in tqdm(emb_files)]
             scores_file = f"{input_base}/w_{split}.txt"
             if os.path.exists(scores_file):
                 with open(scores_file) as f:

@@ -53,6 +53,15 @@ class ProteinsManager:
             return None
         return pdb_file
 
+    def get_emb_file(self,id_):
+        base_dir = self.get_base_dir(id_)
+        if not base_dir:
+            return None
+        emb_file = f"{base_dir}/embeddings.npy"
+        if not os.path.exists(emb_file):
+            return None
+        return emb_file
+
 
 class MoleculeManager:
     def __init__(self):
