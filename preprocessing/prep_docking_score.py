@@ -6,6 +6,7 @@ import rdkit.rdBase as rkrb
 import rdkit.RDLogger as rkl
 from tqdm import tqdm
 from utils import ProteinsManager, MoleculeManager, get_prot_mol_doc_file
+
 logger = rkl.logger()
 logger.setLevel(rkl.ERROR)
 rkrb.DisableLog("rdApp.error")
@@ -57,19 +58,26 @@ def calculate_dsw(distances, vdw_products=1.7, clip_value=1.91):
     return (1 / distances) * (2 * np.power(vdw_products / distances, 12) - np.power(vdw_products / distances, 6))
 
 
-def get_protein_mol_att(protein_manager: ProteinsManager, protein_id, molecule_id):
+def get_protein_mol_att(protein_manager: ProteinsManager, protein_id, molecules_id):
     protein_file = protein_manager.get_pdb_file(protein_id)
     if protein_file is None:
         return None
     protein_seq, protein_cords = get_protein_cords(protein_file)
     protein_cords = np.array(protein_cords)
-    sdf_file = get_prot_mol_doc_file(protein_manager.get_base_dir(protein_id), molecule_id)
-    if sdf_file is None:
+    all_mol_coords = []
+    for mol_id in molecules_id:
+        sdf_file = get_prot_mol_doc_file(protein_manager.get_base_dir(protein_id), mol_id)
+        if sdf_file is None:
+            continue
+        mol_cords = get_mol_cords(sdf_file)
+        if len(mol_cords) == 0:
+            continue
+        all_mol_coords.append(mol_cords)
+    if len(all_mol_coords) == 0:
         return None
-    lig_coords = get_mol_cords(sdf_file)
-    if len(lig_coords) == 0:
-        return None
-    dist = euclidean_distances(protein_cords, lig_coords)
+    all_mol_coords = np.array(all_mol_coords)
+    print(all_mol_coords.shape)
+    dist = euclidean_distances(protein_cords, all_mol_coords)
     weights = calculate_dsw(dist)
     weights = weights.mean(axis=1)
     return weights
@@ -84,21 +92,12 @@ def get_reaction_attention_emd(rnx, protein_manager: ProteinsManager, molecule_m
     src, ec = rnx.split("|")
     protein_id = protein_manager.get_id(ec)
     if protein_id is None:
-        print(f"Protein ID not found for {ec}")
         return None
-    weights = []
-    for mol_smiles in src.split("."):
-        mol_id = molecule_manager.get_id(mol_smiles)
-        if mol_id is None:
-            print(f"Molecule ID not found for {mol_smiles}")
-            continue
-        w = get_protein_mol_att(protein_manager, protein_id, mol_id)
-        if w is not None:
-            weights.append(w)
-    if len(weights) == 0:
-        print(f"No weights found for {rnx}")
+    mol_ids = [molecule_manager.get_id(mol_smiles) for mol_smiles in src.split(".")]
+    mol_ids = [mol_id for mol_id in mol_ids if mol_id is not None]
+    weights = get_protein_mol_att(protein_manager, protein_id, mol_ids)
+    if weights is None:
         return None
-    weights = np.array(weights).mean(axis=0)  # Average over all molecules
     weights = np.concatenate([[0], weights, [0]])  # Add start and end tokens
     return weights
 
