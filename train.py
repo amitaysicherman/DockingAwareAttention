@@ -180,7 +180,7 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--ec_type", default=3, type=int)
+    parser.add_argument("--ec_type", default=2, type=int)
     parser.add_argument("--daa_type", default=0, type=int)
     parser.add_argument("--batch_size", type=int, default=128)
     parser.add_argument("--batch_size_factor", type=int, default=2)

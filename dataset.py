@@ -101,7 +101,7 @@ class SeqToSeqDataset(Dataset):
             # emb = to_torch_float(emb_lines[i])
             scores = to_torch_float(scores_lines[i])
             data.append(
-                {"input_ids": input_id, "labels": label, "emb": emb_lines[i], "docking_scores": scores,
+                {"input_ids": input_id, "labels": label, "emb": [emb_lines[i]], "docking_scores": scores,
                  "id": torch.tensor([ids_lines[i]])})
 
         print(f"Dataset {split} loaded, len: {len(data)} / {len(src_lines)}")
