@@ -120,6 +120,6 @@ if "__main__" == __name__:
 
 
     t = tok()
-    ds = SeqToSeqDataset(datasets=["ecreact"], split="test", tokenizer=t, add_emb=[True])
+    ds = SeqToSeqDataset(datasets=["ecreact"], split="test", tokenizer=t, add_emb=[True],max_length=1000)
 
     print(ds.samples_ids)
