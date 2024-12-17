@@ -20,4 +20,5 @@ configs="--ec_type 0 --batch_size_factor 1|\
 # Split the config string into an array using '|' as a delimiter
 IFS='|' read -ra config_array <<< "$configs"
 config=${config_array[$((SLURM_ARRAY_TASK_ID - 1))]}
-python train.py $config
+#python train.py $config
+torchrun --nproc_per_node=2 train.py $config
