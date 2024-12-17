@@ -1,3 +1,6 @@
+import os
+
+
 class ProteinsManager:
     def __init__(self):
         self.id_to_chunk = {}
@@ -25,17 +28,18 @@ class ProteinsManager:
     def get_id(self, ec):
         return self.ec_to_id[ec]
 
-
     def get_base_dir(self, id_):
         if id_ not in self.id_to_chunk:
             return None
         chunk = self.get_chunk(id_)
         return f"datasets/ecreact/proteins/chunk_{chunk}/{id_}"
+
     def get_pdb_file(self, id_):
         base_dir = self.get_base_dir(id_)
         if not base_dir:
             return None
         return f"{base_dir}/fold.pdb"
+
 
 class MoleculeManager:
     def __init__(self):
@@ -61,3 +65,14 @@ class MoleculeManager:
         mol = mol.replace(' ', '')
         return self.mol_to_id[mol], mol
 
+
+def get_prot_mol_doc_file(protein_base, molecule_id):
+    if not os.path.exists(protein_base):
+        return None
+    dock_dir = f'{protein_base}/{molecule_id}'
+    if not os.path.exists(dock_dir) or not os.path.exists(f'{dock_dir}/complex_0'):
+        return None
+    dock_file = f'{protein_base}/{molecule_id}/complex_0/rank1.sdf'
+    if not os.path.exists(dock_file):
+        return None
+    return dock_file
