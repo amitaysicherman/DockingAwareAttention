@@ -73,8 +73,8 @@ class SeqToSeqDataset(Dataset):
             for es_index in range(len(emb_lines)):
                 if emb_lines[es_index] is None or scores_lines[es_index] is None:
                     continue
-                emb=np.load(emb_lines[es_index])[0]
-                if emb != len(scores_lines[es_index]):
+                emb = np.load(emb_lines[es_index])[0]
+                if len(emb) != len(scores_lines[es_index]):
                     emb_lines[es_index] = None
                     scores_lines[es_index] = None
                     errors += 1
@@ -91,7 +91,7 @@ class SeqToSeqDataset(Dataset):
 
         data = []
         for i in tqdm(range(len(src_lines))):
-            if emb_lines[i] is None or scores_lines[i] is None or len(emb_lines[i]) != len(scores_lines[i]):
+            if emb_lines[i] is None or scores_lines[i] is None:
                 continue
             input_id = encode_eos_pad(self.tokenizer, src_lines[i], self.max_length)
             label = encode_eos_pad(self.tokenizer, tgt_lines[i], self.max_length)
