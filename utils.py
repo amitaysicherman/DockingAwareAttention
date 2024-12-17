@@ -27,7 +27,7 @@ class ProteinsManager:
 
     def get_id(self, ec):
         if "[" in ec:  # tokenized
-            ec = ec.replace("[", "").replace("]", "").replace("v", "").replace("u", "").replace("t", "").replace("q","")
+            ec = ec.replace("]", ".").replace("[", "").replace("v", "").replace("u", "").replace("t", "").replace("q","")
         if ec not in self.ec_to_id:
             return None
         return self.ec_to_id[ec]
