@@ -63,7 +63,7 @@ class MoleculeManager:
                 self.id_to_mol[i] = line
 
     def get_id(self, mol):
-        if " " in mol:
+        if " " in mol: # tokenized
             mol = mol.replace(" ", "")
         if mol not in self.mol_to_id:
             return None
