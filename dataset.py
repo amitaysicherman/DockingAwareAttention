@@ -54,6 +54,9 @@ class SeqToSeqDataset(Dataset):
 
         with open(f"{input_base}/tgt-{split}.txt") as f:
             tgt_lines = f.read().splitlines()
+        if src_lines[-1] == "" or tgt_lines[-1] == "":
+            src_lines = src_lines[:-1]
+            tgt_lines = tgt_lines[:-1]
         if not add_emb:
             emb_lines = [emb_zero] * len(src_lines)
             scores_lines = [scores_zero] * len(src_lines)
