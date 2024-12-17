@@ -111,10 +111,8 @@ class CustomDataCollatorForSeq2Seq(DataCollatorForSeq2Seq):
         features_to_batch = [{k: f[k] for k in f if k in regular_names} for f in features]
         batch = super().__call__(features_to_batch)
 
-        emb_list = [f["emb"] for f in features]
-        print(emb_list[0])
-        print(emb_list[0].shape)
-        emb_list = [np.load(f[0])[0] if len(f) else emb_zero for f in emb_list]
+        emb_list = [f["emb"][0] for f in features]
+        emb_list = [np.load(f)[0] if len(f) else emb_zero for f in emb_list]
         emb_list = [torch.tensor(e).float() for e in emb_list]
         batch["emb"] = torch.nn.utils.rnn.pad_sequence(emb_list, batch_first=True, padding_value=0.0)
         docking_scores_list = [f["docking_scores"] for f in features]
