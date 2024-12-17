@@ -62,14 +62,20 @@ def get_protein_mol_att(protein_manager: ProteinsManager, protein_id, molecules_
     protein_file = protein_manager.get_pdb_file(protein_id)
     if protein_file is None:
         return None
-    protein_seq, protein_cords = get_protein_cords(protein_file)
+    try:
+        protein_seq, protein_cords = get_protein_cords(protein_file)
+    except Exception as e:
+        return None
     protein_cords = np.array(protein_cords)
     all_mol_coords = []
     for mol_id in molecules_id:
         sdf_file = get_prot_mol_doc_file(protein_manager.get_base_dir(protein_id), mol_id)
         if sdf_file is None:
             continue
-        mol_cords = get_mol_cords(sdf_file)
+        try:
+            mol_cords = get_mol_cords(sdf_file)
+        except Exception as e:
+            continue
         if len(mol_cords) == 0:
             continue
         all_mol_coords.extend(mol_cords)
