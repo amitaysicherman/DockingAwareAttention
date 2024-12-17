@@ -60,6 +60,8 @@ def calculate_dsw(distances, vdw_products=1.7, clip_value=1.91):
 
 def get_protein_mol_att(protein_manager: ProteinsManager, protein_id, molecule_id):
     protein_file = protein_manager.get_pdb_file(protein_id)
+    if protein_file is None:
+        return None
     protein_seq, protein_cords = get_protein_cords(protein_file)
     protein_cords = np.array(protein_cords)
     sdf_file = get_prot_mol_doc_file(protein_manager.get_base_dir(protein_id), molecule_id)
