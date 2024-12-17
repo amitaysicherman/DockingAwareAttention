@@ -105,7 +105,7 @@ class SeqToSeqDataset(Dataset):
 
         data = []
         for i in tqdm(range(len(src_lines))):
-            if emb_lines[i] is None or scores_lines[i] is None:
+            if emb_lines[i] is None or scores_lines[i] is None or len(emb_lines[i]) != len(scores_lines[i]):
                 continue
             input_id = encode_eos_pad(self.tokenizer, src_lines[i], self.max_length)
             label = encode_eos_pad(self.tokenizer, tgt_lines[i], self.max_length)
