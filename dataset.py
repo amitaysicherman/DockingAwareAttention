@@ -69,6 +69,15 @@ class SeqToSeqDataset(Dataset):
             scores_lines = [get_reaction_attention_emd(src, self.proteins_manager, self.molecule_manager, tokens=True,
                                                        only_src=True)
                             for src in tqdm(src_lines)]
+            errors = 0
+            for es_index in range(len(emb_lines)):
+                if emb_lines[es_index] is None or scores_lines[es_index] is None:
+                    continue
+                if len(emb_lines[es_index]) != len(scores_lines[es_index]):
+                    emb_lines[es_index] = None
+                    scores_lines[es_index] = None
+                    errors += 1
+            print(f"Errors: {errors}")
             #
             #
             # scores_file = f"{input_base}/w_{split}.txt"
