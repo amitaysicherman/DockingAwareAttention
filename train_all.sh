@@ -3,7 +3,6 @@
 #SBATCH --mem=256G
 #SBATCH --requeue
 #SBATCH --gres=gpu:L40:1
-#SBATCH -c 8
 #SBATCH --array=1-10
 
 configs="--ec_type 0|\
