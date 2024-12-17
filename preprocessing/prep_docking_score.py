@@ -72,7 +72,7 @@ def get_protein_mol_att(protein_manager: ProteinsManager, protein_id, molecules_
         mol_cords = get_mol_cords(sdf_file)
         if len(mol_cords) == 0:
             continue
-        all_mol_coords.append(mol_cords)
+        all_mol_coords.extend(mol_cords)
     if len(all_mol_coords) == 0:
         return None
     all_mol_coords = np.array(all_mol_coords)
