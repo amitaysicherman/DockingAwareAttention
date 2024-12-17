@@ -105,7 +105,7 @@ if __name__ == "__main__":
     molecule_manager = MoleculeManager()
     for split in ["train", "valid", "test"]:
         split_w = []
-        with open(f"datasets/ecreact/level4/src-{split}.txt") as f:
+        with open(f"datasets/ecreact/src-{split}.txt") as f:
             src_lines = f.read().splitlines()
         for line in tqdm(src_lines):
             w = get_reaction_attention_emd(line, protein_manager, molecule_manager, tokens=True, only_src=True)
@@ -114,5 +114,5 @@ if __name__ == "__main__":
             else:
                 w = " ".join([str(x) for x in w])
             split_w.append(w)
-        with open(f"datasets/ecreact/level4/w_{split}.txt", "w") as f:
+        with open(f"datasets/ecreact/w_{split}.txt", "w") as f:
             f.write("\n".join(split_w))
