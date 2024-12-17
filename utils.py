@@ -27,6 +27,7 @@ class ProteinsManager:
 
     def get_id(self, ec):
         if "[" in ec:  # tokenized
+            ec = ec.replace(" ", "")
             ec = ec.replace("v", "").replace("u", "").replace("t", "").replace("q", "").replace("[", "")
             ec = ".".join(ec.split("]")[:-1])
         if ec not in self.ec_to_id:
@@ -52,6 +53,7 @@ class ProteinsManager:
             return None
         return pdb_file
 
+
 class MoleculeManager:
     def __init__(self):
         self.mol_to_id = {}
@@ -63,7 +65,7 @@ class MoleculeManager:
                 self.id_to_mol[i] = line
 
     def get_id(self, mol):
-        if " " in mol: # tokenized
+        if " " in mol:  # tokenized
             mol = mol.replace(" ", "")
         if mol not in self.mol_to_id:
             return None

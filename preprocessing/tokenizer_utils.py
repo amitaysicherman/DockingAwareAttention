@@ -36,24 +36,11 @@ def tokenize_reaction_smiles(rxn: str) -> str:
     return " ".join(tokens)
 
 
-def encode_eos_pad(tokenizer, text, max_length, no_pad=False, remove_unk=False):
+def encode_eos_pad(tokenizer, text, max_length):
     tokens = tokenizer.encode(text, add_special_tokens=False, truncation=False)
     if SPACIAL_TOKENS[UNK] in tokens:
-        if remove_unk:
-            tokens = [x for x in tokens if x != SPACIAL_TOKENS[UNK]]
+        tokens = [x for x in tokens if x != SPACIAL_TOKENS[UNK]]
     tokens = tokens + [tokenizer.eos_token_id]
-    if no_pad:
-        if len(tokens) > max_length:
-            return None
-
-        return torch.tensor(tokens)
     if len(tokens) > max_length:
-        return None, None
-    n_tokens = len(tokens)
-    padding_length = max_length - len(tokens)
-    if padding_length > 0:
-        tokens = tokens + [tokenizer.pad_token_id] * padding_length
-    mask = [1] * n_tokens + [0] * padding_length
-    tokens = torch.tensor(tokens)
-    mask = torch.tensor(mask)
-    return tokens, mask
+        return None
+    return torch.tensor(tokens)
