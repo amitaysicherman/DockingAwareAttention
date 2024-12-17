@@ -1,4 +1,5 @@
 import os
+from enum import Enum
 
 
 class ProteinsManager:
@@ -53,7 +54,7 @@ class ProteinsManager:
             return None
         return pdb_file
 
-    def get_emb_file(self,id_):
+    def get_emb_file(self, id_):
         base_dir = self.get_base_dir(id_)
         if not base_dir:
             return None
@@ -100,3 +101,17 @@ def get_prot_mol_doc_file(protein_base, molecule_id):
     if not os.path.exists(dock_file):
         return None
     return dock_file
+
+
+class DaaType(Enum):
+    NO = 0
+    MEAN = 1
+    DOCKING = 2
+    ATTENTION = 3
+    ALL = 4
+
+
+class ECType(Enum):
+    NO_EC = 0
+    PAPER = 1
+    PRETRAINED = 2

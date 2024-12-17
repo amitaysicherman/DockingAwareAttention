@@ -44,3 +44,9 @@ def encode_eos_pad(tokenizer, text, max_length):
     if len(tokens) > max_length:
         return None
     return torch.tensor(tokens)
+
+
+def get_ec_tokens():
+    with open(f"{TOKENIZER_DIR}/ec_tokens.txt", "r") as f:
+        ec_tokens = f.read().splitlines()
+    return ec_tokens

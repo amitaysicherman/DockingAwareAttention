@@ -81,12 +81,15 @@ class SeqToSeqDataset(Dataset):
 
         data = []
         for i in tqdm(range(len(src_lines))):
+            if emb_lines[i] is None or scores_lines[i] is None:
+                continue
             input_id = encode_eos_pad(self.tokenizer, src_lines[i], self.max_length)
             label = encode_eos_pad(self.tokenizer, tgt_lines[i], self.max_length)
+            if input_id is None or label is None:
+                continue
+
             emb = to_torch_float(emb_lines[i])
             scores = to_torch_float(scores_lines[i])
-            if input_id is None or label is None or emb is None or scores is None:
-                continue
             data.append(
                 {"input_ids": input_id, "labels": label, "emb": emb, "docking_scores": scores, "id": torch.tensor([i])})
 
