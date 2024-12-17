@@ -38,14 +38,19 @@ class ProteinsManager:
         if id_ not in self.id_to_chunk:
             return None
         chunk = self.get_chunk(id_)
-        return f"datasets/ecreact/proteins/chunk_{chunk}/{id_}"
+        base_dir = f"datasets/ecreact/proteins/chunk_{chunk}/{id_}"
+        if not os.path.exists(base_dir):
+            return None
+        return base_dir
 
     def get_pdb_file(self, id_):
         base_dir = self.get_base_dir(id_)
         if not base_dir:
             return None
-        return f"{base_dir}/fold.pdb"
-
+        pdb_file = f"{base_dir}/fold.pdb"
+        if not os.path.exists(pdb_file):
+            return None
+        return pdb_file
 
 class MoleculeManager:
     def __init__(self):

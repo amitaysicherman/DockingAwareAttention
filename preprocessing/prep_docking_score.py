@@ -6,7 +6,6 @@ import rdkit.rdBase as rkrb
 import rdkit.RDLogger as rkl
 from tqdm import tqdm
 from utils import ProteinsManager, MoleculeManager, get_prot_mol_doc_file
-
 logger = rkl.logger()
 logger.setLevel(rkl.ERROR)
 rkrb.DisableLog("rdApp.error")
