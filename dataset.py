@@ -112,7 +112,7 @@ if __name__ == '__main__':
 
     tokenizer = PreTrainedTokenizerFast.from_pretrained(TOKENIZER_DIR)
 
-    ds = SeqToSeqDataset(datasets=["ecreact"], split="test", tokenizer=tokenizer, add_emb=[True])
+    ds = SeqToSeqDataset(datasets=["ecreact"], split="train", tokenizer=tokenizer, add_emb=[True])
     print(f"EcReAct train dataset len: {len(ds)}")
-    uspto = SeqToSeqDataset(datasets=["uspto"], split="test", tokenizer=tokenizer, add_emb=[False])
+    uspto = SeqToSeqDataset(datasets=["uspto"], split="train", tokenizer=tokenizer, add_emb=[False])
     print(f"USPTO train dataset len: {len(uspto)}")
