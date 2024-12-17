@@ -63,7 +63,7 @@ class SeqToSeqDataset(Dataset):
             prot_ids = [self.proteins_manager.get_id(ec) if ec is not None else None for ec in ec_lines]
             emb_files = [self.proteins_manager.get_emb_file(prot_id) if prot_id is not None else None for prot_id in
                          prot_ids]
-            emb_lines = [np.load(f) if f is not None else None for f in tqdm(emb_files)]
+            emb_lines = [np.load(f)[0] if f is not None else None for f in tqdm(emb_files)] # 0 is un-batched
             scores_file = f"{input_base}/w_{split}.txt"
             if os.path.exists(scores_file):
                 with open(scores_file) as f:
