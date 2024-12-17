@@ -7,6 +7,7 @@ from tqdm import tqdm
 import os
 from utils import ProteinsManager
 from preprocessing.tokenizer_utils import encode_eos_pad
+
 emb_zero = np.zeros((1, 2560))
 scores_zero = np.zeros(1)
 
@@ -61,7 +62,7 @@ class SeqToSeqDataset(Dataset):
             prot_ids = [self.proteins_manager.get_id(ec) if ec is not None else None for ec in ec_lines]
             emb_files = [self.proteins_manager.get_pdb_file(prot_id) if prot_id is not None else None for prot_id in
                          prot_ids]
-            emb_lines = [np.load(f) if os.path.exists(f) else None for f in tqdm(emb_files)]
+            emb_lines = [np.load(f, allow_pickle=True) if os.path.exists(f) else None for f in tqdm(emb_files)]
             scores_file = f"{input_base}/w_{split}.txt"
             if os.path.exists(scores_file):
                 with open(scores_file) as f:
