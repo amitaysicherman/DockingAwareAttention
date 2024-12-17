@@ -9,7 +9,7 @@ from transformers import DataCollatorForSeq2Seq
 import torch
 from torch.utils.data import DataLoader
 from model import CustomT5Model
-
+import numpy as np
 import os
 from tqdm import tqdm
 
@@ -109,6 +109,8 @@ class CustomDataCollatorForSeq2Seq(DataCollatorForSeq2Seq):
         batch = super().__call__(features_to_batch)
 
         emb_list = [f["emb"] for f in features]
+        emb_list = [np.load(f)[0] for f in emb_list]
+        emb_list = [torch.tensor(e).float() for e in emb_list]
         batch["emb"] = torch.nn.utils.rnn.pad_sequence(emb_list, batch_first=True, padding_value=0.0)
         docking_scores_list = [f["docking_scores"] for f in features]
         batch["docking_scores"] = torch.nn.utils.rnn.pad_sequence(docking_scores_list, batch_first=True,

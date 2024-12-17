@@ -63,9 +63,9 @@ class SeqToSeqDataset(Dataset):
         else:
             ec_lines = [get_ec_from_src(s) for s in src_lines]
             prot_ids = [self.proteins_manager.get_id(ec) if ec is not None else None for ec in ec_lines]
-            emb_files = [self.proteins_manager.get_emb_file(prot_id) if prot_id is not None else None for prot_id in
+            emb_lines = [self.proteins_manager.get_emb_file(prot_id) if prot_id is not None else None for prot_id in
                          prot_ids]
-            emb_lines = [np.load(f)[0] if f is not None else None for f in tqdm(emb_files)]  # 0 is un-batched
+            # emb_lines = [np.load(f)[0] if f is not None else None for f in tqdm(emb_files)]  # 0 is un-batched
             scores_lines = [get_reaction_attention_emd(src, self.proteins_manager, self.molecule_manager, tokens=True,
                                                        only_src=True)
                             for src in tqdm(src_lines)]
@@ -73,26 +73,12 @@ class SeqToSeqDataset(Dataset):
             for es_index in range(len(emb_lines)):
                 if emb_lines[es_index] is None or scores_lines[es_index] is None:
                     continue
-                if len(emb_lines[es_index]) != len(scores_lines[es_index]):
+                emb=np.load(emb_lines[es_index])[0]
+                if emb != len(scores_lines[es_index]):
                     emb_lines[es_index] = None
                     scores_lines[es_index] = None
                     errors += 1
             print(f"Errors: {errors}")
-            #
-            #
-            # scores_file = f"{input_base}/w_{split}.txt"
-            #
-            # if os.path.exists(scores_file):
-            #
-            #     with open(scores_file) as f:
-            #         scores_lines = f.read().splitlines()
-            #         if len(scores_lines) == len(src_lines) - 1:  # last line is empty
-            #             scores_lines.append("")
-            #
-            #     scores_lines = [np.array([float(s) for s in scores.split()]) if len(scores) else None for scores in
-            #                     scores_lines]
-            # else:
-            #     scores_lines = [scores_zero] * len(src_lines)
         assert len(src_lines) == len(tgt_lines) == len(emb_lines) == len(scores_lines)
 
         if self.sample_size is not None:
@@ -112,10 +98,10 @@ class SeqToSeqDataset(Dataset):
             if input_id is None or label is None:
                 continue
 
-            emb = to_torch_float(emb_lines[i])
+            # emb = to_torch_float(emb_lines[i])
             scores = to_torch_float(scores_lines[i])
             data.append(
-                {"input_ids": input_id, "labels": label, "emb": emb, "docking_scores": scores,
+                {"input_ids": input_id, "labels": label, "emb": emb_lines[i], "docking_scores": scores,
                  "id": torch.tensor([ids_lines[i]])})
 
         print(f"Dataset {split} loaded, len: {len(data)} / {len(src_lines)}")
