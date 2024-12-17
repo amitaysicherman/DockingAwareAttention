@@ -9,7 +9,6 @@ from utils import ProteinsManager, MoleculeManager
 from preprocessing.tokenizer_utils import encode_eos_pad
 from preprocessing.prep_docking_score import get_reaction_attention_emd
 
-emb_zero = np.zeros((1, 2560))
 scores_zero = np.zeros(1)
 
 
@@ -58,7 +57,7 @@ class SeqToSeqDataset(Dataset):
             tgt_lines = f.read().splitlines()
         ids_lines = [i for i in range(len(src_lines))]
         if not add_emb:
-            emb_lines = [emb_zero] * len(src_lines)
+            emb_lines = [""] * len(src_lines)
             scores_lines = [scores_zero] * len(src_lines)
         else:
             ec_lines = [get_ec_from_src(s) for s in src_lines]
