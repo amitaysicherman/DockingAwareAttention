@@ -76,7 +76,6 @@ def get_protein_mol_att(protein_manager: ProteinsManager, protein_id, molecules_
     if len(all_mol_coords) == 0:
         return None
     all_mol_coords = np.array(all_mol_coords)
-    print(all_mol_coords.shape)
     dist = euclidean_distances(protein_cords, all_mol_coords)
     weights = calculate_dsw(dist)
     weights = weights.mean(axis=1)
@@ -110,12 +109,20 @@ if __name__ == "__main__":
         split_w = []
         with open(f"datasets/ecreact/src-{split}.txt") as f:
             src_lines = f.read().splitlines()
-        for line in tqdm(src_lines):
+        pbar = tqdm(src_lines)
+        failed = 0
+        total = 0
+        for line in pbar:
             w = get_reaction_attention_emd(line, protein_manager, molecule_manager, tokens=True, only_src=True)
             if w is None:
                 w = ""
+                failed += 1
             else:
                 w = " ".join([str(x) for x in w])
             split_w.append(w)
+            total += 1
+            msg = f"Failed: {failed}/{total}"
+            pbar.set_postfix_str(msg)
+
         with open(f"datasets/ecreact/w_{split}.txt", "w") as f:
             f.write("\n".join(split_w))
