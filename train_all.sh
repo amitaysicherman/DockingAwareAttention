@@ -5,6 +5,11 @@
 #SBATCH -c 8
 #SBATCH --gres=gpu:L40:2
 #SBATCH --array=1-10
+#SBATCH --export=ALL  # Ensure environment variables are exported
+
+# Activate Python environment
+source /home/amitay.s/miniconda3/condabin/conda
+conda activate zik
 
 configs="--ec_type 0 --batch_size_factor 1|\
           --ec_type 1 --batch_size_factor 1|\
