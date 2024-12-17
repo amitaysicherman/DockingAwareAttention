@@ -5,8 +5,9 @@ from transformers import PreTrainedTokenizerFast
 import random
 from tqdm import tqdm
 import os
-from utils import ProteinsManager
+from utils import ProteinsManager, MoleculeManager
 from preprocessing.tokenizer_utils import encode_eos_pad
+from preprocessing.prep_docking_score import get_reaction_attention_emd
 
 emb_zero = np.zeros((1, 2560))
 scores_zero = np.zeros(1)
@@ -34,6 +35,7 @@ class SeqToSeqDataset(Dataset):
         self.data = []
         self.samples_ids = []
         self.proteins_manager = ProteinsManager()
+        self.molecule_manager = MoleculeManager()
         if weights is None:
             weights = [1] * len(datasets)
         else:
@@ -63,17 +65,25 @@ class SeqToSeqDataset(Dataset):
             prot_ids = [self.proteins_manager.get_id(ec) if ec is not None else None for ec in ec_lines]
             emb_files = [self.proteins_manager.get_emb_file(prot_id) if prot_id is not None else None for prot_id in
                          prot_ids]
-            emb_lines = [np.load(f)[0] if f is not None else None for f in tqdm(emb_files)] # 0 is un-batched
-            scores_file = f"{input_base}/w_{split}.txt"
-            if os.path.exists(scores_file):
-                with open(scores_file) as f:
-                    scores_lines = f.read().splitlines()
-                    if len(scores_lines) == len(src_lines) - 1:  # last line is empty
-                        scores_lines.append("")
-                scores_lines = [np.array([float(s) for s in scores.split()]) if len(scores) else None for scores in
-                                scores_lines]
-            else:
-                scores_lines = [scores_zero] * len(src_lines)
+            emb_lines = [np.load(f)[0] if f is not None else None for f in tqdm(emb_files)]  # 0 is un-batched
+            scores_lines = [get_reaction_attention_emd(src, self.proteins_manager, self.molecule_manager, tokens=True,
+                                                       only_src=True)
+                            for src in tqdm(src_lines)]
+            #
+            #
+            # scores_file = f"{input_base}/w_{split}.txt"
+            #
+            # if os.path.exists(scores_file):
+            #
+            #     with open(scores_file) as f:
+            #         scores_lines = f.read().splitlines()
+            #         if len(scores_lines) == len(src_lines) - 1:  # last line is empty
+            #             scores_lines.append("")
+            #
+            #     scores_lines = [np.array([float(s) for s in scores.split()]) if len(scores) else None for scores in
+            #                     scores_lines]
+            # else:
+            #     scores_lines = [scores_zero] * len(src_lines)
         assert len(src_lines) == len(tgt_lines) == len(emb_lines) == len(scores_lines)
 
         if self.sample_size is not None:
