@@ -54,7 +54,7 @@ class SeqToSeqDataset(Dataset):
 
         with open(f"{input_base}/tgt-{split}.txt") as f:
             tgt_lines = f.read().splitlines()
-
+        ids_lines = [i for i in range(len(src_lines))]
         if not add_emb:
             emb_lines = [emb_zero] * len(src_lines)
             scores_lines = [scores_zero] * len(src_lines)
@@ -82,6 +82,7 @@ class SeqToSeqDataset(Dataset):
             tgt_lines = [tgt_lines[i] for i in indices]
             emb_lines = [emb_lines[i] for i in indices]
             scores_lines = [scores_lines[i] for i in indices]
+            ids_lines = [ids_lines[i] for i in indices]
 
         data = []
         for i in tqdm(range(len(src_lines))):
@@ -95,7 +96,8 @@ class SeqToSeqDataset(Dataset):
             emb = to_torch_float(emb_lines[i])
             scores = to_torch_float(scores_lines[i])
             data.append(
-                {"input_ids": input_id, "labels": label, "emb": emb, "docking_scores": scores, "id": torch.tensor([i])})
+                {"input_ids": input_id, "labels": label, "emb": emb, "docking_scores": scores,
+                 "id": torch.tensor([ids_lines[i]])})
 
         print(f"Dataset {split} loaded, len: {len(data)} / {len(src_lines)}")
         return data
