@@ -21,6 +21,5 @@ configs="--ec_type 0 |\
 IFS='|' read -ra config_array <<< "$configs"
 config=${config_array[$((SLURM_ARRAY_TASK_ID - 1))]}
 # Restore default IFS
-unset IFS
 
-torchrun --nproc_per_node=4 train.py $config
+train.py $config
