@@ -15,7 +15,11 @@ from tqdm import tqdm
 
 DEBUG = False
 
-
+# print available devices
+print("Available devices:")
+for i in range(torch.cuda.device_count()):
+    print(torch.cuda.get_device_name(i))
+    
 def k_name(filename, k):
     assert filename.endswith(".txt")
     return filename.replace(".txt", f"_k{k}.txt")
