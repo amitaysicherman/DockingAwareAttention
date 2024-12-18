@@ -106,7 +106,7 @@ def get_tokenizer_and_model(ec_type, daa_type, emb_dropout, add_ec_tokens,pre):
                       decoder_start_token_id=tokenizer.pad_token_id)
     model = CustomT5Model(config, daa_type, emb_dropout=emb_dropout)
     if pre:
-        pretrained_model = CustomT5Model.from_pretrained("results/ec-ECType.NO_EC_daa-0_emb-0.0_ectokens-0/checkpoint-86450")
+        pretrained_model = CustomT5Model.from_pretrained("results/ec-ECType.NO_EC_daa-0_emb-0.0_ectokens-0/checkpoint-86450",daa_type=0)
         if model.config.vocab_size != pretrained_model.config.vocab_size:
             pretrained_model.resize_token_embeddings(model.config.vocab_size)
         missing_keys, unexpected_keys = model.load_state_dict(pretrained_model.state_dict(), strict=False)
