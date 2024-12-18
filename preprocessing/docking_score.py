@@ -6,7 +6,7 @@ import rdkit.rdBase as rkrb
 import rdkit.RDLogger as rkl
 from tqdm import tqdm
 from utils import ProteinsManager, MoleculeManager, get_prot_mol_doc_file
-
+EPS = 1e-6
 logger = rkl.logger()
 logger.setLevel(rkl.ERROR)
 rkrb.DisableLog("rdApp.error")
@@ -85,6 +85,7 @@ def get_protein_mol_att(protein_manager: ProteinsManager, protein_id, molecules_
     dist = euclidean_distances(protein_cords, all_mol_coords)
     weights = calculate_dsw(dist)
     weights = weights.mean(axis=1)
+    weights = weights / (weights.sum() + EPS)
     return weights
 
 

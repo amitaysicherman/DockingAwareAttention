@@ -7,7 +7,7 @@ from tqdm import tqdm
 import os
 from utils import ProteinsManager, MoleculeManager
 from preprocessing.tokenizer_utils import encode_eos_pad
-from preprocessing.prep_docking_score import get_reaction_attention_emd
+from preprocessing.docking_score import get_reaction_attention_emd
 
 scores_zero = np.zeros(1)
 
@@ -64,7 +64,6 @@ class SeqToSeqDataset(Dataset):
             prot_ids = [self.proteins_manager.get_id(ec) if ec is not None else None for ec in ec_lines]
             emb_lines = [self.proteins_manager.get_emb_file(prot_id) if prot_id is not None else None for prot_id in
                          prot_ids]
-            # emb_lines = [np.load(f)[0] if f is not None else None for f in tqdm(emb_files)]  # 0 is un-batched
             scores_lines = [get_reaction_attention_emd(src, self.proteins_manager, self.molecule_manager, tokens=True,
                                                        only_src=True)
                             for src in tqdm(src_lines)]

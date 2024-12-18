@@ -41,8 +41,6 @@ class DockingAwareAttention(nn.Module):
         return x.mean(dim=1).unsqueeze(1)
 
     def _forward_docking(self, x, docking_scores, mask=None):
-
-        docking_scores = docking_scores / docking_scores.sum(dim=1, keepdim=True)  # (batch_size, seq_len)
         docking_scores = docking_scores.unsqueeze(-1)  # (batch_size, seq_len, 1)
         if mask is not None:
             d_mask = mask.bool().unsqueeze(-1)
