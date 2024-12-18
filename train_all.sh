@@ -23,4 +23,4 @@ config=${config_array[$((SLURM_ARRAY_TASK_ID - 1))]}
 # Restore default IFS
 unset IFS
 
-python -m torch.distributed.launch --nproc-per-node=4 "train.py $config"
+torchrun --nproc_per_node=4 train.py $config
