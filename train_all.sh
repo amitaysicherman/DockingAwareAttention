@@ -20,4 +20,4 @@ configs="--ec_type 0 |\
 # Split the config string into an array using '|' as a delimiter
 IFS='|' read -ra config_array <<< "$configs"
 config=${config_array[$((SLURM_ARRAY_TASK_ID - 1))]}
-python train.py $config
+python -m torch.distributed.launch --nproc-per-node=4 train.py $config
