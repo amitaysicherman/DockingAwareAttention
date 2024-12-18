@@ -3,7 +3,7 @@
 #SBATCH --mem=256G
 #SBATCH --requeue
 #SBATCH -c 8
-#SBATCH --gres=gpu:L40:4
+#SBATCH --gres=gpu:L40:2
 #SBATCH --array=1-10
 
 configs="--ec_type 0 --batch_size_factor 1 --batch_size 256 |\

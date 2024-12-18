@@ -12,7 +12,6 @@ from model import CustomT5Model
 import numpy as np
 import os
 from tqdm import tqdm
-from torch.nn import DataParallel
 
 DEBUG = False
 
@@ -134,9 +133,6 @@ def main(ec_type, daa_type, batch_size, batch_size_factor, learning_rate, max_le
          epochs):
     tokenizer, model = get_tokenizer_and_model(ec_type, daa_type=daa_type, emb_dropout=emb_dropout,
                                                add_ec_tokens=add_ec_tokens)
-    if torch.cuda.device_count() > 1:
-        model = DataParallel(model)
-
     common_ds_args = {"tokenizer": tokenizer, "max_length": max_length}
     train_dataset = SeqToSeqDataset(["ecreact", "uspto"], "train", weights=[40, 1], **common_ds_args,
                                     add_emb=[True, False])
