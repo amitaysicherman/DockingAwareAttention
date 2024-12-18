@@ -22,4 +22,4 @@ IFS='|' read -ra config_array <<< "$configs"
 config=${config_array[$((SLURM_ARRAY_TASK_ID - 1))]}
 # Restore default IFS
 
-train.py $config
+python train.py $config
