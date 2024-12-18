@@ -6,16 +6,16 @@
 #SBATCH --gres=gpu:L40:4
 #SBATCH --array=1-10
 
-configs="--ec_type 0 |\
-          --ec_type 1 |\
-          --ec_type 2 --daa_type 1 |\
-          --ec_type 2 --daa_type 2 |\
-          --ec_type 2 --daa_type 3 |\
-          --ec_type 2 --daa_type 4 |\
-          --ec_type 2 --daa_type 1 --add_ec_tokens 1 |\
-          --ec_type 2 --daa_type 2 --add_ec_tokens 1 |\
-          --ec_type 2 --daa_type 3 --add_ec_tokens 1 |\
-          --ec_type 2 --daa_type 4 --add_ec_tokens 1 "
+configs="--ec_type 0 --batch_size_factor 1 --batch_size 256 |\
+          --ec_type 1 --batch_size_factor 1 --batch_size 256 |\
+          --ec_type 2 --daa_type 1 --batch_size_factor 1 --batch_size 256 |\
+          --ec_type 2 --daa_type 2 --batch_size_factor 1 --batch_size 256 |\
+          --ec_type 2 --daa_type 3 --batch_size_factor 1 --batch_size 256 |\
+          --ec_type 2 --daa_type 4 --batch_size_factor 1 --batch_size 256 |\
+          --ec_type 2 --daa_type 1 --add_ec_tokens 1 --batch_size_factor 1 --batch_size 256 |\
+          --ec_type 2 --daa_type 2 --add_ec_tokens 1 --batch_size_factor 1 --batch_size 256 |\
+          --ec_type 2 --daa_type 3 --add_ec_tokens 1 --batch_size_factor 1 --batch_size 256 |\
+          --ec_type 2 --daa_type 4 --add_ec_tokens 1 --batch_size_factor 1 --batch_size 256"
 
 # Split the config string into an array using '|' as a delimiter
 IFS='|' read -ra config_array <<< "$configs"
