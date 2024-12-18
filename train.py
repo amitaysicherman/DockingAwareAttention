@@ -200,7 +200,7 @@ if __name__ == '__main__':
     parser.add_argument("--max_length", type=int, default=200)
     parser.add_argument("--add_ec_tokens", type=int, default=0)
     parser.add_argument("--emb_dropout", default=0.0, type=float)
-    parser.add_argument("--epochs", type=int, default=10)
+    parser.add_argument("--epochs", type=int, default=20)
 
     args = parser.parse_args()
     ec_type = ECType(args.ec_type)
