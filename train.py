@@ -88,7 +88,7 @@ class EvalGen(TrainerCallback):
         self.run_eval(state.epoch)
 
 
-def args_to_name(ec_type, daa_type, emb_dropout, add_ec_tokens, pre):
+def args_to_name(ec_type, daa_type, emb_dropout, add_ec_tokens):
     name = f"ec-{ec_type}_daa-{daa_type}_emb-{emb_dropout}_ectokens-{add_ec_tokens}"
     return name
 
