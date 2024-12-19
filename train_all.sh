@@ -6,6 +6,9 @@
 #SBATCH --gres=gpu:L40:2
 #SBATCH --array=1-6
 
+export MASTER_PORT=$((29500 + SLURM_ARRAY_TASK_ID))
+
+
 configs="--ec_type 0 --batch_size_factor 1|\
      --ec_type 1 --batch_size_factor 1|\
      --ec_type 2 --daa_type 1 --batch_size_factor 1|\
