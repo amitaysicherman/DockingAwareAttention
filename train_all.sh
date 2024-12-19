@@ -25,4 +25,6 @@ IFS='|' read -ra config_array <<< "$configs"
 config=${config_array[$((SLURM_ARRAY_TASK_ID - 1))]}
 # Restore default IFS
 export PATH=/home/amitay.s/miniconda3/envs/zik/bin/:$PATH
-/home/amitay.s/miniconda3/envs/zik/bin/torchrun --nproc_per_node=2 train.py $config
+/home/amitay.s/miniconda3/envs/zik/bin/python -m torch.distributed.launch --nproc_per_node=2 --master_port=$MASTER_PORT train.py $config
+
+#/home/amitay.s/miniconda3/envs/zik/bin/torchrun --nproc_per_node=2 train.py $config
