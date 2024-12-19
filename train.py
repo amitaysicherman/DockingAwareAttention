@@ -172,6 +172,7 @@ def main(ec_type, daa_type, batch_size, batch_size_factor, learning_rate, max_le
         gradient_accumulation_steps=batch_size_factor,
         save_safetensors=False,
         group_by_length=True,
+        local_rank=LOCAL_RANK
     )
 
     # Initialize Trainer
@@ -200,8 +201,10 @@ if __name__ == '__main__':
     parser.add_argument("--add_ec_tokens", type=int, default=0)
     parser.add_argument("--emb_dropout", default=0.0, type=float)
     parser.add_argument("--epochs", type=int, default=50)
+    parser.add_argument("--local-rank", type=int, default=-1)
 
     args = parser.parse_args()
+    LOCAL_RANK = args.local_rank
     ec_type = ECType(args.ec_type)
     if ec_type == ECType.NO_EC or ec_type == ECType.PAPER:
         print("Setting daa_type to 0 (NO EC or PAPER)")
