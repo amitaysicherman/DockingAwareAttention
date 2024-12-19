@@ -7,7 +7,7 @@
 #SBATCH --array=1-6
 
 MASTER_PORT=$((29500 + SLURM_ARRAY_TASK_ID))
-
+echo "MASTER_PORT: $MASTER_PORT"
 
 configs="--ec_type 0 --batch_size_factor 1|\
      --ec_type 1 --batch_size_factor 1|\
