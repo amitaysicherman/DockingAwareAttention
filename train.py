@@ -88,15 +88,12 @@ class EvalGen(TrainerCallback):
         self.run_eval(state.epoch)
 
 
-def args_to_name(ec_type, daa_type, emb_dropout, add_ec_tokens,pre):
-    name= f"ec-{ec_type}_daa-{daa_type}_emb-{emb_dropout}_ectokens-{add_ec_tokens}"
-    if pre:
-        name += "_pre"
+def args_to_name(ec_type, daa_type, emb_dropout, add_ec_tokens, pre):
+    name = f"ec-{ec_type}_daa-{daa_type}_emb-{emb_dropout}_ectokens-{add_ec_tokens}"
     return name
 
 
-
-def get_tokenizer_and_model(ec_type, daa_type, emb_dropout, add_ec_tokens,pre):
+def get_tokenizer_and_model(ec_type, daa_type, emb_dropout, add_ec_tokens):
     tokenizer = PreTrainedTokenizerFast.from_pretrained(TOKENIZER_DIR)
     if ec_type == ECType.PAPER or add_ec_tokens:
         new_tokens = get_ec_tokens()
@@ -105,12 +102,6 @@ def get_tokenizer_and_model(ec_type, daa_type, emb_dropout, add_ec_tokens,pre):
                       eos_token_id=tokenizer.eos_token_id,
                       decoder_start_token_id=tokenizer.pad_token_id)
     model = CustomT5Model(config, daa_type, emb_dropout=emb_dropout)
-    if pre:
-        pretrained_model = CustomT5Model.from_pretrained("results/ec-ECType.NO_EC_daa-0_emb-0.0_ectokens-0/checkpoint-86450",daa_type=0)
-        if model.config.vocab_size != pretrained_model.config.vocab_size:
-            pretrained_model.resize_token_embeddings(model.config.vocab_size)
-        missing_keys, unexpected_keys = model.load_state_dict(pretrained_model.state_dict(), strict=False)
-        print("Missing keys in the model (not loaded):", missing_keys)
     print(f"Number of parameters: {sum(p.numel() for p in model.parameters()):,}")
     return tokenizer, model
 
@@ -141,16 +132,16 @@ class CustomDataCollatorForSeq2Seq(DataCollatorForSeq2Seq):
 
 
 def main(ec_type, daa_type, batch_size, batch_size_factor, learning_rate, max_length, emb_dropout, add_ec_tokens,
-         epochs,pre):
+         epochs):
     tokenizer, model = get_tokenizer_and_model(ec_type, daa_type=daa_type, emb_dropout=emb_dropout,
-                                               add_ec_tokens=add_ec_tokens,pre=pre)
+                                               add_ec_tokens=add_ec_tokens)
     common_ds_args = {"tokenizer": tokenizer, "max_length": max_length}
     train_dataset = SeqToSeqDataset(["ecreact", "uspto"], "train", weights=[40, 1], **common_ds_args,
                                     add_emb=[True, False])
 
     val_dataset = SeqToSeqDataset(["ecreact"], "valid", **common_ds_args, add_emb=[True])
     test_dataset = SeqToSeqDataset(["ecreact"], "test", **common_ds_args, add_emb=[True])
-    run_name = args_to_name(ec_type, daa_type, emb_dropout, add_ec_tokens,pre)
+    run_name = args_to_name(ec_type, daa_type, emb_dropout, add_ec_tokens)
     print(f"Run name: {run_name}")
     # Training arguments
     output_dir = f"results/{run_name}"
@@ -164,7 +155,7 @@ def main(ec_type, daa_type, batch_size, batch_size_factor, learning_rate, max_le
     training_args = TrainingArguments(
         output_dir=output_dir,
         num_train_epochs=epochs,
-        warmup_ratio=0.05,
+        warmup_steps=0,
         logging_steps=1 / (epochs * epochs),
         save_steps=1 / epochs,
         save_total_limit=3,
@@ -177,6 +168,7 @@ def main(ec_type, daa_type, batch_size, batch_size_factor, learning_rate, max_le
 
         run_name=run_name,
         learning_rate=learning_rate,
+        lr_scheduler_type="constant",
         gradient_accumulation_steps=batch_size_factor,
         save_safetensors=False,
         group_by_length=True,
@@ -207,8 +199,7 @@ if __name__ == '__main__':
     parser.add_argument("--max_length", type=int, default=200)
     parser.add_argument("--add_ec_tokens", type=int, default=0)
     parser.add_argument("--emb_dropout", default=0.0, type=float)
-    parser.add_argument("--epochs", type=int, default=10)
-    parser.add_argument("--pre", type=int, default=1)
+    parser.add_argument("--epochs", type=int, default=50)
 
     args = parser.parse_args()
     ec_type = ECType(args.ec_type)
@@ -217,4 +208,4 @@ if __name__ == '__main__':
         args.daa_type = 0
     main(ec_type=ec_type, daa_type=args.daa_type, batch_size=args.batch_size, batch_size_factor=args.batch_size_factor,
          learning_rate=args.learning_rate, max_length=args.max_length, emb_dropout=args.emb_dropout,
-         add_ec_tokens=args.add_ec_tokens, epochs=args.epochs,pre=args.pre)
+         add_ec_tokens=args.add_ec_tokens, epochs=args.epochs)
