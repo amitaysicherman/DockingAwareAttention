@@ -196,7 +196,7 @@ if __name__ == '__main__':
     parser.add_argument("--daa_type", default=0, type=int)
     parser.add_argument("--batch_size", type=int, default=128)
     parser.add_argument("--batch_size_factor", type=int, default=1)
-    parser.add_argument("--learning_rate", type=float, default=0.001)
+    parser.add_argument("--learning_rate", type=float, default=0.00005)
     parser.add_argument("--max_length", type=int, default=200)
     parser.add_argument("--add_ec_tokens", type=int, default=0)
     parser.add_argument("--emb_dropout", default=0.0, type=float)
