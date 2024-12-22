@@ -1,6 +1,5 @@
 import pandas as pd
-from typing import List, Tuple, Dict
-from preprocessing.build_tokenizer import SMILES_REGEX
+from preprocessing.tokenizer_utils import SMILES_REGEX
 
 
 def load_df(split):
