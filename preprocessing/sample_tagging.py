@@ -10,7 +10,7 @@ def load_df(split):
     with open(f"datasets/ecreact/tgt-{split}.txt", "r") as f:
         tgt = f.read().splitlines()
     tgt = [x.replace(" ", "") for x in tgt]
-    with open(f"datasets/ecreact/{split}_sources.txt", "r") as f:
+    with open(f"datasets/ecreact/datasets-{split}.txt", "r") as f:
         ds = f.read().splitlines()
     assert len(src) == len(tgt) == len(ec) == len(ds), f"{len(src)} {len(tgt)} {len(ec)} {len(ds)}"
     df = pd.DataFrame({"src": src, "tgt": tgt, "ec": ec, "ds": ds})
