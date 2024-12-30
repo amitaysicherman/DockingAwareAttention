@@ -135,20 +135,20 @@ if __name__ == "__main__":
         chunk = protein_manager.get_chunk(id_)
         output_dir = f"{output_base_dir}/chunk_{chunk}/{id_}"
         os.makedirs(output_dir, exist_ok=True)
-
-        if os.path.exists(output_dir):
+        output_emb_file = f"{output_dir}/embeddings.npy" if not args.med else f"{output_dir}/embeddings_600m.npy"
+        if os.path.exists(output_emb_file):
             continue
         if args.med:
             embeddings = model.to_vec(sequence)
             if embeddings is None:
                 fail_count += 1
                 continue
-            np.save(f"{output_dir}/embeddings_600m.npy", embeddings)
+            np.save(output_emb_file, embeddings)
         else:
             fold, embeddings = model.get_fold_and_embedding(sequence)
             if fold is None or embeddings is None:
                 fail_count += 1
                 continue
             to_pdb(fold, sequence, f"{output_dir}/fold.pdb")
-            np.save(f"{output_dir}/embeddings.npy", embeddings)
+            np.save(output_emb_file, embeddings)
     print(f"Fail count: {fail_count}/{len(ids)}")
