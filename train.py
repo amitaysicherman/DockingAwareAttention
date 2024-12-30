@@ -88,12 +88,14 @@ class EvalGen(TrainerCallback):
         self.run_eval(state.epoch)
 
 
-def args_to_name(ec_type, daa_type, emb_dropout, add_ec_tokens):
+def args_to_name(ec_type, daa_type, emb_dropout, add_ec_tokens, esm600m):
     name = f"ec-{ec_type}_daa-{daa_type}_emb-{emb_dropout}_ectokens-{add_ec_tokens}"
+    if esm600m:
+        name += "_esm600m"
     return name
 
 
-def get_tokenizer_and_model(ec_type, daa_type, emb_dropout, add_ec_tokens):
+def get_tokenizer_and_model(ec_type, daa_type, emb_dropout, add_ec_tokens, esm600m):
     tokenizer = PreTrainedTokenizerFast.from_pretrained(TOKENIZER_DIR)
     if ec_type == ECType.PAPER or add_ec_tokens:
         new_tokens = get_ec_tokens()
@@ -101,15 +103,17 @@ def get_tokenizer_and_model(ec_type, daa_type, emb_dropout, add_ec_tokens):
     config = T5Config(vocab_size=len(tokenizer.get_vocab()), pad_token_id=tokenizer.pad_token_id,
                       eos_token_id=tokenizer.eos_token_id,
                       decoder_start_token_id=tokenizer.pad_token_id)
-    model = CustomT5Model(config, daa_type, emb_dropout=emb_dropout)
+    prot_dim = 2560 if not esm600m else 1024
+    model = CustomT5Model(config, daa_type, emb_dropout=emb_dropout, prot_dim=prot_dim)
     print(f"Number of parameters: {sum(p.numel() for p in model.parameters()):,}")
     return tokenizer, model
 
 
-emb_zero = np.zeros((1, 2560))
-
-
 class CustomDataCollatorForSeq2Seq(DataCollatorForSeq2Seq):
+    def __init__(self, *args, emb_dim=2560, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.emb_zero = np.zeros(emb_dim)
+
     def __call__(self, features):
         if "emb" not in features[0]:
             return super().__call__(features)
@@ -119,7 +123,7 @@ class CustomDataCollatorForSeq2Seq(DataCollatorForSeq2Seq):
         batch = super().__call__(features_to_batch)
 
         emb_list = [f["emb"][0] for f in features]
-        emb_list = [np.load(f)[0] if len(f) else emb_zero for f in emb_list]
+        emb_list = [np.load(f)[0] if len(f) else self.emb_zero for f in emb_list]
         emb_list = [torch.tensor(e).float() for e in emb_list]
         batch["emb"] = torch.nn.utils.rnn.pad_sequence(emb_list, batch_first=True, padding_value=0.0)
         docking_scores_list = [f["docking_scores"] for f in features]
@@ -132,16 +136,16 @@ class CustomDataCollatorForSeq2Seq(DataCollatorForSeq2Seq):
 
 
 def main(ec_type, daa_type, batch_size, batch_size_factor, learning_rate, max_length, emb_dropout, add_ec_tokens,
-         epochs):
+         epochs, esm600m):
     tokenizer, model = get_tokenizer_and_model(ec_type, daa_type=daa_type, emb_dropout=emb_dropout,
-                                               add_ec_tokens=add_ec_tokens)
-    common_ds_args = {"tokenizer": tokenizer, "max_length": max_length}
+                                               add_ec_tokens=add_ec_tokens, esm600m=esm600m)
+    common_ds_args = {"tokenizer": tokenizer, "max_length": max_length, "esm600m": esm600m}
     train_dataset = SeqToSeqDataset(["ecreact", "uspto"], "train", weights=[40, 1], **common_ds_args,
                                     add_emb=[True, False])
 
     val_dataset = SeqToSeqDataset(["ecreact"], "valid", **common_ds_args, add_emb=[True])
     test_dataset = SeqToSeqDataset(["ecreact"], "test", **common_ds_args, add_emb=[True])
-    run_name = args_to_name(ec_type, daa_type, emb_dropout, add_ec_tokens)
+    run_name = args_to_name(ec_type, daa_type, emb_dropout, add_ec_tokens, esm600m)
     print(f"Run name: {run_name}")
     # Training arguments
     output_dir = f"results/{run_name}"
@@ -202,6 +206,7 @@ if __name__ == '__main__':
     parser.add_argument("--emb_dropout", default=0.0, type=float)
     parser.add_argument("--epochs", type=int, default=50)
     parser.add_argument("--local-rank", type=int, default=-1)
+    parser.add_argument("--esm600m", type=int, default=0)
 
     args = parser.parse_args()
     LOCAL_RANK = args.local_rank
@@ -211,4 +216,4 @@ if __name__ == '__main__':
         args.daa_type = 0
     main(ec_type=ec_type, daa_type=args.daa_type, batch_size=args.batch_size, batch_size_factor=args.batch_size_factor,
          learning_rate=args.learning_rate, max_length=args.max_length, emb_dropout=args.emb_dropout,
-         add_ec_tokens=args.add_ec_tokens, epochs=args.epochs)
+         add_ec_tokens=args.add_ec_tokens, epochs=args.epochs, esm600m=args.esm600m)

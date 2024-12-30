@@ -60,11 +60,14 @@ class ProteinsManager:
             return None
         return pdb_file
 
-    def get_emb_file(self, id_):
+    def get_emb_file(self, id_, esm600m=False):
         base_dir = self.get_base_dir(id_)
         if not base_dir:
             return None
-        emb_file = f"{base_dir}/embeddings.npy"
+        if esm600m:
+            emb_file = f"{base_dir}/embeddings_600m.npy"
+        else:
+            emb_file = f"{base_dir}/embeddings.npy"
         if not os.path.exists(emb_file):
             return None
         return emb_file

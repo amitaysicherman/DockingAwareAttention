@@ -29,7 +29,7 @@ class Esm3MedEmb:
             protein = self.ESMProtein(sequence=seq)
             protein = self.model.encode(protein).to(self.decive)
             conf = self.LogitsConfig(return_embeddings=True, sequence=True)
-            vec = self.model.logits(protein, conf).embeddings[0]
+            vec = self.model.logits(protein, conf).embeddings
             return vec.detach().cpu().numpy()
         except Exception as e:
             print(e)
