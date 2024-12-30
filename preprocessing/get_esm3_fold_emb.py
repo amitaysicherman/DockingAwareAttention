@@ -107,10 +107,11 @@ if __name__ == "__main__":
     from utils import ProteinsManager
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--token", type=str, required=True)
+    parser.add_argument("--token", type=str, default="")
     parser.add_argument("--med", type=int, default=0)
     args = parser.parse_args()
-
+    if not args.med:
+        assert args.token, "Token is required for ESM3FoldEmbedding"
     if args.med:
         model = Esm3MedEmb()
     else:
