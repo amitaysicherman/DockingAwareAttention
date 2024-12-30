@@ -115,7 +115,7 @@ def get_tokenizer_and_model(ec_type, daa_type, emb_dropout, add_ec_tokens, esm60
 class CustomDataCollatorForSeq2Seq(DataCollatorForSeq2Seq):
     def __init__(self, *args, emb_dim=2560, **kwargs):
         super().__init__(*args, **kwargs)
-        self.emb_zero = np.zeros(emb_dim)
+        self.emb_zero = np.zeros((1, emb_dim))
 
     def __call__(self, features):
         if "emb" not in features[0]:
