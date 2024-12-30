@@ -25,15 +25,15 @@ class Esm3MedEmb:
     def to_vec(self, seq: str):
         if len(seq) > 1023:
             seq = seq[:1023]
-        try:
-            protein = self.ESMProtein(sequence=seq)
-            protein = self.model.encode(protein).to(self.decive)
-            conf = self.LogitsConfig(return_embeddings=True, sequence=True)
-            vec = self.model.logits(protein, conf).embeddings[0]
-            return vec
-        except Exception as e:
-            print(e)
-            return None
+        # try:
+        protein = self.ESMProtein(sequence=seq)
+        protein = self.model.encode(protein).to(self.decive)
+        conf = self.LogitsConfig(return_embeddings=True, sequence=True)
+        vec = self.model.logits(protein, conf).embeddings[0]
+        return vec
+        # except Exception as e:
+        #     print(e)
+        #     return None
 
 
 def to_pdb(coordinates, sequence, pdb_path):
