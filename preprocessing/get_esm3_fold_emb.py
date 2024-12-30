@@ -4,7 +4,36 @@ import requests
 import numpy as np
 from esm.utils.structure.protein_chain import ProteinChain
 import os
-import time
+import torch
+
+
+class Esm3MedEmb:
+    def __init__(self, size="medium"):
+        from esm.models.esmc import ESMC
+        from esm.sdk.api import ESMProtein, LogitsConfig
+        self.decive = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.ESMProtein = ESMProtein
+        self.LogitsConfig = LogitsConfig
+        self.size = size
+        if size == "small":
+            self.model = ESMC.from_pretrained("esmc_300m", device=self.decive).eval()
+        elif size == "medium":
+            self.model = ESMC.from_pretrained("esmc_600m", device=self.decive).eval()
+        else:
+            raise ValueError(f"Unknown size: {size}")
+
+    def to_vec(self, seq: str):
+        if len(seq) > 1023:
+            seq = seq[:1023]
+        try:
+            protein = self.ESMProtein(sequence=seq)
+            protein = self.model.encode(protein).to(self.decive)
+            conf = self.LogitsConfig(return_embeddings=True, sequence=True)
+            vec = self.model.logits(protein, conf).embeddings[0]
+            return vec
+        except Exception as e:
+            print(e)
+            return None
 
 
 def to_pdb(coordinates, sequence, pdb_path):
@@ -79,8 +108,13 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--token", type=str, required=True)
+    parser.add_argument("--med", type=int, default=0)
     args = parser.parse_args()
-    esm3_dock_emb = ESM3FoldEmbedding(token=args.token)
+
+    if args.med:
+        model = Esm3MedEmb()
+    else:
+        model = ESM3FoldEmbedding(token=args.token)
 
     input_seq_file = "datasets/ecreact/ec_fasta.txt"
     input_ids_file = "datasets/ecreact/ec_ids.txt"
@@ -99,14 +133,21 @@ if __name__ == "__main__":
 
         chunk = protein_manager.get_chunk(id_)
         output_dir = f"{output_base_dir}/chunk_{chunk}/{id_}"
-        if os.path.exists(output_dir):
-            continue
-        fold, embeddings = esm3_dock_emb.get_fold_and_embedding(sequence)
-        if fold is None or embeddings is None:
-            fail_count += 1
-            continue
         os.makedirs(output_dir, exist_ok=True)
 
-        to_pdb(fold, sequence, f"{output_dir}/fold.pdb")
-        np.save(f"{output_dir}/embeddings.npy", embeddings)
+        if os.path.exists(output_dir):
+            continue
+        if args.med:
+            embeddings = model.to_vec(sequence)
+            if embeddings is None:
+                fail_count += 1
+                continue
+            np.save(f"{output_dir}/embeddings_600m.npy", embeddings)
+        else:
+            fold, embeddings = model.get_fold_and_embedding(sequence)
+            if fold is None or embeddings is None:
+                fail_count += 1
+                continue
+            to_pdb(fold, sequence, f"{output_dir}/fold.pdb")
+            np.save(f"{output_dir}/embeddings.npy", embeddings)
     print(f"Fail count: {fail_count}/{len(ids)}")
