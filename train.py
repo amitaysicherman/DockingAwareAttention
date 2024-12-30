@@ -62,14 +62,17 @@ def eval_dataset(model, tokenizer, dataloader, output_file, all_k=[1, 3, 5]):
 
 
 class EvalGen(TrainerCallback):
-    def __init__(self, model, tokenizer, valid_ds, test_ds, output_base, batch_size=64):
+    def __init__(self, model, tokenizer, valid_ds, test_ds, output_base, batch_size=64, emb_dim=2560):
         super().__init__()
         self.model = model
         self.tokenizer = tokenizer
         args = {"batch_size": batch_size, "num_workers": 0, "shuffle": False, "drop_last": False}
-        self.valid_data_loader = DataLoader(valid_ds, collate_fn=CustomDataCollatorForSeq2Seq(tokenizer, model=model),
+        self.valid_data_loader = DataLoader(valid_ds,
+                                            collate_fn=CustomDataCollatorForSeq2Seq(tokenizer, emb_dim=emb_dim,
+                                                                                    model=model),
                                             **args)
-        self.test_data_loader = DataLoader(test_ds, collate_fn=CustomDataCollatorForSeq2Seq(tokenizer, model=model),
+        self.test_data_loader = DataLoader(test_ds, collate_fn=CustomDataCollatorForSeq2Seq(tokenizer, emb_dim=emb_dim,
+                                                                                            model=model),
                                            **args)
         self.output_base = output_base
         os.makedirs(output_base, exist_ok=True)
@@ -186,7 +189,7 @@ def main(ec_type, daa_type, batch_size, batch_size_factor, learning_rate, max_le
         args=training_args,
         train_dataset=train_dataset,
         tokenizer=tokenizer,
-        callbacks=[EvalGen(model, tokenizer, val_dataset, test_dataset, output_dir)],
+        callbacks=[EvalGen(model, tokenizer, val_dataset, test_dataset, output_dir, emb_dim=emb_dim)],
         data_collator=CustomDataCollatorForSeq2Seq(tokenizer, emb_dim=emb_dim, model=model, padding=True),
     )
 
