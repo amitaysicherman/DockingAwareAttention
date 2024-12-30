@@ -93,11 +93,11 @@ class LinFuseModel(nn.Module):
 
 def get_model(cp_path="transferin/model.pt"):
     config = ReactEmbedConfig(p_dim=1152, m_dim=768, n_layers=1, hidden_dim=256, dropout=0.3)
-    model = ReactEmbedModel(config)
+    model = ReactEmbedModel(config).eval()
     task_model = LinFuseModel(DataType.PROTEIN, fuse_model=model)
     if cp_path is not None:
         task_model.load_state_dict(torch.load(cp_path, map_location="cpu"))
-    return task_model
+    return task_model.eval()
 
 
 if __name__ == "__main__":
