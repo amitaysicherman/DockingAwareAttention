@@ -103,7 +103,7 @@ def get_tokenizer_and_model(ec_type, daa_type, emb_dropout, add_ec_tokens, esm60
     config = T5Config(vocab_size=len(tokenizer.get_vocab()), pad_token_id=tokenizer.pad_token_id,
                       eos_token_id=tokenizer.eos_token_id,
                       decoder_start_token_id=tokenizer.pad_token_id)
-    prot_dim = 2560 if not esm600m else 1024
+    prot_dim = 2560 if not esm600m else 1152
     model = CustomT5Model(config, daa_type, emb_dropout=emb_dropout, prot_dim=prot_dim)
     print(f"Number of parameters: {sum(p.numel() for p in model.parameters()):,}")
     return tokenizer, model
@@ -178,6 +178,7 @@ def main(ec_type, daa_type, batch_size, batch_size_factor, learning_rate, max_le
         group_by_length=True,
         local_rank=LOCAL_RANK
     )
+    emb_dim = 2560 if not esm600m else 1152
 
     # Initialize Trainer
     trainer = Trainer(
@@ -186,7 +187,7 @@ def main(ec_type, daa_type, batch_size, batch_size_factor, learning_rate, max_le
         train_dataset=train_dataset,
         tokenizer=tokenizer,
         callbacks=[EvalGen(model, tokenizer, val_dataset, test_dataset, output_dir)],
-        data_collator=CustomDataCollatorForSeq2Seq(tokenizer, model=model, padding=True),
+        data_collator=CustomDataCollatorForSeq2Seq(tokenizer, emb_dim=emb_dim, model=model, padding=True),
     )
 
     trainer.train(resume_from_checkpoint=resume_from_checkpoint)
