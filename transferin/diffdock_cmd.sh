@@ -12,6 +12,7 @@
 #https://www.uniprot.org/uniprotkb/P02787/entry
 #
 
+#all_dirs:
 
 
 python -m inference --config default_inference_args.yaml --protein_path '../transferin/transferrin.pdb' --ligand 'CCCCCCCCCCCCCCCC(=O)OCC(COP(=O)([O-])OCC[N+](C)(C)C)OC(=O)CCCCCCCCCCCCCCC' --out_dir '../transferin/DPPC'
