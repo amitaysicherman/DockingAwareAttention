@@ -48,16 +48,9 @@ for seq_indes in range(emb.shape[0]):
     res_seq = torch.nn.functional.sigmoid(model(emb_seq))
     seq_res.append(res_seq[0].item())
 
-plt.plot(seq_res)
-# add hline with mean
-plt.axhline(y=res_mean, color='r', linestyle='-')
-
-# for alpha in [0, 0.1, 0.2, 0.5, 0.9, 1]:
 w_emb = (emb[1:-1] * weights).sum(0).unsqueeze(0)
 emb_with_weights = torch.nn.functional.sigmoid(model(w_emb))[0].item()
 print(emb_with_weights)
-plt.axhline(y=emb_with_weights, linestyle='--', color='g')
-plt.show()
 
 from transferin.pymol_viz.protein_values import create_pymol_script
 from transferin.pymol_viz.protein_mols import create_pymol_script_with_sdf
