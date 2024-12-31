@@ -14,12 +14,13 @@ rartio = [0.65, 0.3, 0.025, 0.025]
 
 mol_cords = []
 all_weights = []
+sdf_files = []
 for name, r in zip(names, rartio):
     sdf_file = f"transferin/{name}.sdf"
+    sdf_files.append(sdf_file)
     file_mol_cords = get_mol_cords(sdf_file)  # shape (n, 3)
     mol_cords.extend(file_mol_cords)
     all_mol_coords = np.array(mol_cords)
-
     dist = euclidean_distances(protein_cords, all_mol_coords)
     w = calculate_dsw(dist)
     w = w.mean(axis=1)
@@ -56,16 +57,22 @@ w_emb = (emb[1:-1] * weights).sum(0).unsqueeze(0)
 emb_with_weights = torch.nn.functional.sigmoid(model(w_emb))[0].item()
 print(emb_with_weights)
 plt.axhline(y=emb_with_weights, linestyle='--', color='g')
-# plt.ylim([0.95, 1])
-# plt.show()
-from transferin.pymol_viz.protein_values import create_pymol_script
-from transferin.pymol_viz.utils import replace_local_pathes
+plt.show()
 
-seq_res = np.array(seq_res)
-output_script = f"transferin.pymol_viz/per_resid.pml"
+from transferin.pymol_viz.protein_values import create_pymol_script
+from transferin.pymol_viz.protein_mols import create_pymol_script_with_sdf
+
+values = np.array(seq_res[1:-1])
+values = np.log((1 - values) / (values))
+values = torch.Tensor(values)
+
+values = torch.nn.functional.softmax(torch.Tensor(values)).numpy()
+
+output_script = f"transferin/pymol_viz/per_resid.pml"
 create_pymol_script(
     pdb_file,
-    seq_res,
+    values,
     output_script=output_script)
-replace_local_pathes(output_script)
 
+output_script = "transferin/pymol_viz/mols.pml"
+create_pymol_script_with_sdf(pdb_file, sdf_files, weights[0].numpy(), output_script)

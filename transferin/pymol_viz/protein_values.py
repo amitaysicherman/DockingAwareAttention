@@ -4,7 +4,7 @@ from sklearn.preprocessing import MinMaxScaler
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 
-from transferin.pymol_viz.utils import get_residue_ids_from_pdb, replace_local_pathes
+from transferin.pymol_viz.utils import get_residue_ids_from_pdb
 
 
 def create_pymol_script(pdb_file: str, values: np.array, output_script):
