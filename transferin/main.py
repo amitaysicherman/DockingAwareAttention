@@ -9,19 +9,26 @@ pdb_file = "transferin/transferrin.pdb"
 protein_seq, protein_cords = get_protein_cords(pdb_file)
 protein_cords = np.array(protein_cords)
 
-sdf_file = ""
+sdf_file = "transferin/complex_0/rank1.sdf"
 mol_cords = get_mol_cords(sdf_file)
 all_mol_coords = np.array(mol_cords)
 dist = euclidean_distances(protein_cords, all_mol_coords)
 weights = calculate_dsw(dist)
 weights = weights.mean(axis=1)
 weights = weights / (weights.sum() + EPS)
+weights = torch.tensor(weights).float()
+weights=weights.unsqueeze(1)
+
 
 model = get_model()
-emb = np.load("transferin/emb.npy")
+emb = np.load("transferin/emb_6B.npy")
+# if 3D choose first in batch ([0])
+if len(emb.shape) == 3:
+    emb = emb[0]
 emb = torch.tensor(emb).float()
 emb_mean = emb.mean(0).unsqueeze(0)
 res_mean = torch.nn.functional.sigmoid(model(emb_mean))[0].item()
+
 
 print(res_mean)
 seq_res = []
@@ -33,5 +40,12 @@ for seq_indes in range(emb.shape[0]):
 plt.plot(seq_res)
 # add hline with mean
 plt.axhline(y=res_mean, color='r', linestyle='-')
-plt.ylim([0.95, 1])
+
+for alpha in [0,0.1,0.2,0.5,0.9,1]:
+    w=alpha*weights+(1-alpha)*(1-alpha)*1/weights.shape[0]
+    w_emb = (emb[1:-1] * w).sum(0).unsqueeze(0)
+    emb_with_weights = torch.nn.functional.sigmoid(model(w_emb))[0].item()
+    print(alpha,emb_with_weights)
+    plt.axhline(y=emb_with_weights, label=f'alpha={alpha}', linestyle='--')
+# plt.ylim([0.95, 1])
 plt.show()
