@@ -20,6 +20,16 @@ print("Available devices:")
 for i in range(torch.cuda.device_count()):
     print(torch.cuda.get_device_name(i))
 
+def suf_to_dim(suf):
+    if suf == "":
+        return 2560
+    if suf == "_600m":
+        return 1152
+    if suf == "_gn":
+        return 3072
+    if suf == "_pb":
+        return 1024
+    raise ValueError(f"Unknown suffix: {suf}")
 
 def k_name(filename, k):
     assert filename.endswith(".txt")
@@ -91,14 +101,14 @@ class EvalGen(TrainerCallback):
         self.run_eval(state.epoch)
 
 
-def args_to_name(ec_type, daa_type, emb_dropout, add_ec_tokens, esm600m):
-    name = f"ec-{ec_type}_daa-{daa_type}_emb-{emb_dropout}_ectokens-{add_ec_tokens}"
-    if esm600m:
-        name += "_esm600m"
+def args_to_name(ec_type, daa_type, emb_dropout, add_ec_tokens, emb_suf,concat_vec):
+    name = f"ec-{ec_type}_daa-{daa_type}_emb-{emb_dropout}_ectokens-{add_ec_tokens}{emb_suf}"
+    if concat_vec:
+        name += "_concat"
     return name
 
 
-def get_tokenizer_and_model(ec_type, daa_type, emb_dropout, add_ec_tokens, esm600m):
+def get_tokenizer_and_model(ec_type, daa_type, emb_dropout, add_ec_tokens, emb_suf):
     tokenizer = PreTrainedTokenizerFast.from_pretrained(TOKENIZER_DIR)
     if ec_type == ECType.PAPER or add_ec_tokens:
         new_tokens = get_ec_tokens()
@@ -106,8 +116,9 @@ def get_tokenizer_and_model(ec_type, daa_type, emb_dropout, add_ec_tokens, esm60
     config = T5Config(vocab_size=len(tokenizer.get_vocab()), pad_token_id=tokenizer.pad_token_id,
                       eos_token_id=tokenizer.eos_token_id,
                       decoder_start_token_id=tokenizer.pad_token_id)
-    prot_dim = 2560 if not esm600m else 1152
-    model = CustomT5Model(config, daa_type, emb_dropout=emb_dropout, prot_dim=prot_dim)
+
+    prot_dim = suf_to_dim(emb_suf)
+    model = CustomT5Model(config, daa_type, emb_dropout=emb_dropout, prot_dim=prot_dim,concat_vec=concat_vec)
     print(f"Number of parameters: {sum(p.numel() for p in model.parameters()):,}")
     return tokenizer, model
 
@@ -139,16 +150,16 @@ class CustomDataCollatorForSeq2Seq(DataCollatorForSeq2Seq):
 
 
 def main(ec_type, daa_type, batch_size, batch_size_factor, learning_rate, max_length, emb_dropout, add_ec_tokens,
-         epochs, esm600m):
+         epochs, emb_suf,concat_vec):
     tokenizer, model = get_tokenizer_and_model(ec_type, daa_type=daa_type, emb_dropout=emb_dropout,
-                                               add_ec_tokens=add_ec_tokens, esm600m=esm600m)
-    common_ds_args = {"tokenizer": tokenizer, "max_length": max_length, "esm600m": esm600m}
+                                               add_ec_tokens=add_ec_tokens, emb_suf=emb_suf,concat_vec=concat_vec)
+    common_ds_args = {"tokenizer": tokenizer, "max_length": max_length, "emb_suf": emb_suf}
     train_dataset = SeqToSeqDataset(["ecreact", "uspto"], "train", weights=[40, 1], **common_ds_args,
                                     add_emb=[True, False])
 
     val_dataset = SeqToSeqDataset(["ecreact"], "valid", **common_ds_args, add_emb=[True])
     test_dataset = SeqToSeqDataset(["ecreact"], "test", **common_ds_args, add_emb=[True])
-    run_name = args_to_name(ec_type, daa_type, emb_dropout, add_ec_tokens, esm600m)
+    run_name = args_to_name(ec_type, daa_type, emb_dropout, add_ec_tokens, emb_suf,concat_vec)
     print(f"Run name: {run_name}")
     # Training arguments
     output_dir = f"results/{run_name}"
@@ -181,7 +192,7 @@ def main(ec_type, daa_type, batch_size, batch_size_factor, learning_rate, max_le
         group_by_length=True,
         local_rank=LOCAL_RANK
     )
-    emb_dim = 2560 if not esm600m else 1152
+    emb_dim = suf_to_dim(emb_suf)
 
     # Initialize Trainer
     trainer = Trainer(
@@ -210,7 +221,9 @@ if __name__ == '__main__':
     parser.add_argument("--emb_dropout", default=0.0, type=float)
     parser.add_argument("--epochs", type=int, default=10)
     parser.add_argument("--local-rank", type=int, default=-1)
-    parser.add_argument("--esm600m", type=int, default=0)
+    parser.add_argument("--emb_suf", type=str, default="")
+    parser.add_argument("--concat_vec", type=int, default=0)
+
 
     args = parser.parse_args()
     LOCAL_RANK = args.local_rank
@@ -220,4 +233,4 @@ if __name__ == '__main__':
         args.daa_type = 0
     main(ec_type=ec_type, daa_type=args.daa_type, batch_size=args.batch_size, batch_size_factor=args.batch_size_factor,
          learning_rate=args.learning_rate, max_length=args.max_length, emb_dropout=args.emb_dropout,
-         add_ec_tokens=args.add_ec_tokens, epochs=args.epochs, esm600m=args.esm600m)
+         add_ec_tokens=args.add_ec_tokens, epochs=args.epochs, emb_suf=args.emb_suf,concat_vec=args.concat_vec)

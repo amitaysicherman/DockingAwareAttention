@@ -91,9 +91,12 @@ class DockingAwareAttention(nn.Module):
 
 
 class CustomT5Model(T5ForConditionalGeneration):
-    def __init__(self, config: T5Config, daa_type, prot_dim=2560, emb_dropout=0.0):
+    def __init__(self, config: T5Config, daa_type, prot_dim=2560, emb_dropout=0.0, concat_vec=0):
         super(CustomT5Model, self).__init__(config)
         self.daa_type = DaaType(daa_type)
+        self.concat_vec = concat_vec
+        if self.concat_vec == 2:
+            self.lin_proj = nn.Linear(2 * config.d_model, config.d_model)
         if self.daa_type != DaaType.NO:
             self.docking_attention = DockingAwareAttention(prot_dim, config.d_model, config.num_heads, self.daa_type)
             self.emb_dropout = emb_dropout
@@ -109,9 +112,22 @@ class CustomT5Model(T5ForConditionalGeneration):
         emb = emb.unsqueeze(1)
         if self.emb_dropout > 0:
             emb = self.emb_dropout_layer(emb)
-        new_input_embeddings = torch.cat([emb, input_embeddings], dim=1)
-        emb_attention = torch.ones(batch_size, emb.shape[1], device=attention_mask.device)
-        attention_mask = torch.cat([emb_attention, attention_mask], dim=1)
+
+        # concat_vec=0: add as a new token
+        if self.concat_vec == 0:
+            new_input_embeddings = torch.cat([emb, input_embeddings], dim=1)
+            emb_attention = torch.ones(batch_size, emb.shape[1], device=attention_mask.device)
+            attention_mask = torch.cat([emb_attention, attention_mask], dim=1)
+        # concat_vec=1: add to each token embedding with plus
+        elif self.concat_vec == 1:
+            new_input_embeddings = input_embeddings + emb
+
+        # concat_vec=2: concat to each token embedding with concat
+        else:
+            emb = emb.expand(-1, input_embeddings.shape[1], -1)  # expand to match sequence length
+            new_input_embeddings = torch.cat([input_embeddings, emb], dim=-1)
+            new_input_embeddings = self.lin_proj(new_input_embeddings)
+
         return new_input_embeddings, attention_mask
 
     def forward(self, input_ids=None, attention_mask=None, labels=None, inputs_embeds=None, encoder_outputs=None,

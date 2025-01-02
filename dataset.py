@@ -27,9 +27,9 @@ def get_ec_from_src(text):
 
 class SeqToSeqDataset(Dataset):
     def __init__(self, datasets, split, tokenizer: PreTrainedTokenizerFast, add_emb, weights=None, max_length=200,
-                 sample_size=None, shuffle=True, esm600m=False):
+                 sample_size=None, shuffle=True, emb_suf=False):
         self.max_length = max_length
-        self.esm600m = esm600m
+        self.emb_suf = emb_suf
         self.sample_size = sample_size
         self.tokenizer = tokenizer
         self.data = []
@@ -63,7 +63,7 @@ class SeqToSeqDataset(Dataset):
         else:
             ec_lines = [get_ec_from_src(s) for s in src_lines]
             prot_ids = [self.proteins_manager.get_id(ec) if ec is not None else None for ec in ec_lines]
-            emb_lines = [self.proteins_manager.get_emb_file(prot_id, self.esm600m) if prot_id is not None else None for
+            emb_lines = [self.proteins_manager.get_emb_file(prot_id, self.emb_suf) if prot_id is not None else None for
                          prot_id in
                          prot_ids]
             scores_lines = [get_reaction_attention_emd(src, self.proteins_manager, self.molecule_manager, tokens=True,
