@@ -79,14 +79,9 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--token", type=str, default="")
-    parser.add_argument("--med", type=int, default=0)
     args = parser.parse_args()
-    if not args.med:
-        assert args.token, "Token is required for ESM3FoldEmbedding"
-    if args.med:
-        model = Esm3MedEmb()
-    else:
-        model = ESM3FoldEmbedding(token=args.token)
+    assert args.token, "Token is required for ESM3FoldEmbedding"
+    model = ESM3FoldEmbedding(token=args.token)
 
     input_seq_file = "datasets/ecreact/ec_fasta.txt"
     input_ids_file = "datasets/ecreact/ec_ids.txt"
@@ -106,20 +101,13 @@ if __name__ == "__main__":
         chunk = protein_manager.get_chunk(id_)
         output_dir = f"{output_base_dir}/chunk_{chunk}/{id_}"
         os.makedirs(output_dir, exist_ok=True)
-        output_emb_file = f"{output_dir}/embeddings.npy" if not args.med else f"{output_dir}/embeddings_600m.npy"
+        output_emb_file = f"{output_dir}/embeddings.npy"
         if os.path.exists(output_emb_file):
             continue
-        if args.med:
-            embeddings = model.to_vec(sequence)
-            if embeddings is None:
-                fail_count += 1
-                continue
-            np.save(output_emb_file, embeddings)
-        else:
-            fold, embeddings = model.get_fold_and_embedding(sequence)
-            if fold is None or embeddings is None:
-                fail_count += 1
-                continue
-            to_pdb(fold, sequence, f"{output_dir}/fold.pdb")
-            np.save(output_emb_file, embeddings)
+        fold, embeddings = model.get_fold_and_embedding(sequence)
+        if fold is None or embeddings is None:
+            fail_count += 1
+            continue
+        to_pdb(fold, sequence, f"{output_dir}/fold.pdb")
+        np.save(output_emb_file, embeddings)
     print(f"Fail count: {fail_count}/{len(ids)}")
