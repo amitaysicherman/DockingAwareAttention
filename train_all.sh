@@ -19,8 +19,8 @@
 #     --ec_type 2 --daa_type 2 --add_ec_tokens 1|\
 #     --ec_type 2 --daa_type 3 --add_ec_tokens 1|\
 #     --ec_type 2 --daa_type 4 --add_ec_tokens 1"
-configs=" --ec_type 2 --daa_type 4 --add_ec_tokens 1 --emb_suf '_pb'|\
- --ec_type 2 --daa_type 4 --add_ec_tokens 1 --emb_suf '_gn'|\
+configs=" --ec_type 2 --daa_type 4 --add_ec_tokens 1 --emb_suf _pb|\
+ --ec_type 2 --daa_type 4 --add_ec_tokens 1 --emb_suf _gn|\
   --ec_type 2 --daa_type 4 --add_ec_tokens 1 --concat_vec 1|\
   --ec_type 2 --daa_type 4 --add_ec_tokens 1 --concat_vec 1"
 
