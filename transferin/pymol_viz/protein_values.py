@@ -12,7 +12,7 @@ def create_pymol_script(pdb_file: str, values: np.array, output_script):
     assert len(residue_ids) == len(values), "Number of residues in the PDB file does not match the number of values."
     scaler = MinMaxScaler(feature_range=(0, 1))
     normalized_pca_values = scaler.fit_transform(values.reshape(-1, 1)).flatten()
-    viridis_colors = plt.cm.get_cmap("viridis")
+    viridis_colors = plt.cm.get_cmap("Blues")
     emb_colors = viridis_colors(normalized_pca_values)
     emb_colors = emb_colors[:, :3]
     with open(output_script, 'w') as f:

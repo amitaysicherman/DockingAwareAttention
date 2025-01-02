@@ -7,35 +7,6 @@ import os
 import torch
 
 
-class Esm3MedEmb:
-    def __init__(self, size="medium"):
-        from esm.models.esmc import ESMC
-        from esm.sdk.api import ESMProtein, LogitsConfig
-        self.decive = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.ESMProtein = ESMProtein
-        self.LogitsConfig = LogitsConfig
-        self.size = size
-        if size == "small":
-            self.model = ESMC.from_pretrained("esmc_300m", device=self.decive).eval()
-        elif size == "medium":
-            self.model = ESMC.from_pretrained("esmc_600m", device=self.decive).eval()
-        else:
-            raise ValueError(f"Unknown size: {size}")
-
-    def to_vec(self, seq: str):
-        if len(seq) > 1023:
-            seq = seq[:1023]
-        try:
-            protein = self.ESMProtein(sequence=seq)
-            protein = self.model.encode(protein).to(self.decive)
-            conf = self.LogitsConfig(return_embeddings=True, sequence=True)
-            vec = self.model.logits(protein, conf).embeddings
-            return vec.detach().cpu().numpy()
-        except Exception as e:
-            print(e)
-            return None
-
-
 def to_pdb(coordinates, sequence, pdb_path):
     return ProteinChain.from_atom37(
         atom37_positions=coordinates,
