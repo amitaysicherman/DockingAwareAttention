@@ -20,6 +20,7 @@ print("Available devices:")
 for i in range(torch.cuda.device_count()):
     print(torch.cuda.get_device_name(i))
 
+
 def suf_to_dim(suf):
     if suf == "":
         return 2560
@@ -30,6 +31,7 @@ def suf_to_dim(suf):
     if suf == "_pb":
         return 1024
     raise ValueError(f"Unknown suffix: {suf}")
+
 
 def k_name(filename, k):
     assert filename.endswith(".txt")
@@ -101,14 +103,14 @@ class EvalGen(TrainerCallback):
         self.run_eval(state.epoch)
 
 
-def args_to_name(ec_type, daa_type, emb_dropout, add_ec_tokens, emb_suf,concat_vec):
+def args_to_name(ec_type, daa_type, emb_dropout, add_ec_tokens, emb_suf, concat_vec):
     name = f"ec-{ec_type}_daa-{daa_type}_emb-{emb_dropout}_ectokens-{add_ec_tokens}{emb_suf}"
     if concat_vec:
         name += "_concat"
     return name
 
 
-def get_tokenizer_and_model(ec_type, daa_type, emb_dropout, add_ec_tokens, emb_suf):
+def get_tokenizer_and_model(ec_type, daa_type, emb_dropout, add_ec_tokens, emb_suf, concat_vec):
     tokenizer = PreTrainedTokenizerFast.from_pretrained(TOKENIZER_DIR)
     if ec_type == ECType.PAPER or add_ec_tokens:
         new_tokens = get_ec_tokens()
@@ -118,7 +120,7 @@ def get_tokenizer_and_model(ec_type, daa_type, emb_dropout, add_ec_tokens, emb_s
                       decoder_start_token_id=tokenizer.pad_token_id)
 
     prot_dim = suf_to_dim(emb_suf)
-    model = CustomT5Model(config, daa_type, emb_dropout=emb_dropout, prot_dim=prot_dim,concat_vec=concat_vec)
+    model = CustomT5Model(config, daa_type, emb_dropout=emb_dropout, prot_dim=prot_dim, concat_vec=concat_vec)
     print(f"Number of parameters: {sum(p.numel() for p in model.parameters()):,}")
     return tokenizer, model
 
@@ -150,16 +152,16 @@ class CustomDataCollatorForSeq2Seq(DataCollatorForSeq2Seq):
 
 
 def main(ec_type, daa_type, batch_size, batch_size_factor, learning_rate, max_length, emb_dropout, add_ec_tokens,
-         epochs, emb_suf,concat_vec):
+         epochs, emb_suf, concat_vec):
     tokenizer, model = get_tokenizer_and_model(ec_type, daa_type=daa_type, emb_dropout=emb_dropout,
-                                               add_ec_tokens=add_ec_tokens, emb_suf=emb_suf,concat_vec=concat_vec)
+                                               add_ec_tokens=add_ec_tokens, emb_suf=emb_suf, concat_vec=concat_vec)
     common_ds_args = {"tokenizer": tokenizer, "max_length": max_length, "emb_suf": emb_suf}
     train_dataset = SeqToSeqDataset(["ecreact", "uspto"], "train", weights=[40, 1], **common_ds_args,
                                     add_emb=[True, False])
 
     val_dataset = SeqToSeqDataset(["ecreact"], "valid", **common_ds_args, add_emb=[True])
     test_dataset = SeqToSeqDataset(["ecreact"], "test", **common_ds_args, add_emb=[True])
-    run_name = args_to_name(ec_type, daa_type, emb_dropout, add_ec_tokens, emb_suf,concat_vec)
+    run_name = args_to_name(ec_type, daa_type, emb_dropout, add_ec_tokens, emb_suf, concat_vec)
     print(f"Run name: {run_name}")
     # Training arguments
     output_dir = f"results/{run_name}"
@@ -224,7 +226,6 @@ if __name__ == '__main__':
     parser.add_argument("--emb_suf", type=str, default="")
     parser.add_argument("--concat_vec", type=int, default=0)
 
-
     args = parser.parse_args()
     LOCAL_RANK = args.local_rank
     ec_type = ECType(args.ec_type)
@@ -233,4 +234,4 @@ if __name__ == '__main__':
         args.daa_type = 0
     main(ec_type=ec_type, daa_type=args.daa_type, batch_size=args.batch_size, batch_size_factor=args.batch_size_factor,
          learning_rate=args.learning_rate, max_length=args.max_length, emb_dropout=args.emb_dropout,
-         add_ec_tokens=args.add_ec_tokens, epochs=args.epochs, emb_suf=args.emb_suf,concat_vec=args.concat_vec)
+         add_ec_tokens=args.add_ec_tokens, epochs=args.epochs, emb_suf=args.emb_suf, concat_vec=args.concat_vec)

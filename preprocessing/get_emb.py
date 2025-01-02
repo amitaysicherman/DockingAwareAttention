@@ -21,7 +21,7 @@ class PortBert:
 
         with torch.no_grad():
             embedding_repr = self.model(input_ids=input_ids, attention_mask=attention_mask)
-        vec = embedding_repr.last_hidden_state[0]
+        vec = embedding_repr.last_hidden_state
         return vec.detach().cpu().numpy()
 
 
@@ -94,7 +94,13 @@ class GearNet3Embedder:
         protein = self.graph_construction_model(protein)
         output = self.gearnet_model(protein.to(device), protein.node_feature.float().to(device))
         output = output['node_feature']
-        return output.detach().cpu().numpy()
+        output = output.detach().cpu().numpy()
+        # add new dim in axis 0 - (seq_len, 512) -> (1, seq_len, 512)
+        output = np.expand_dims(output, axis=0)
+        # add zeros in first and last position
+        dim = output.shape[-1]
+        output = np.concatenate([np.zeros((1, 1, dim)), output, np.zeros((1, 1, dim))], axis=1)
+        return output
 
 
 NAME_TO_EMB_NAME = {
