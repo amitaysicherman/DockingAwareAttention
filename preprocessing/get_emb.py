@@ -1,7 +1,5 @@
 import re
 import torch
-from transformers import BertModel, BertTokenizer
-from transformers import AutoTokenizer, EsmForProteinFolding
 import os
 import numpy as np
 
@@ -29,8 +27,6 @@ class PortBert:
 
 class Esm3MedEmb:
     def __init__(self, size="medium"):
-        from esm.models.esmc import ESMC
-        from esm.sdk.api import ESMProtein, LogitsConfig
         self.decive = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.ESMProtein = ESMProtein
         self.LogitsConfig = LogitsConfig
@@ -59,18 +55,7 @@ class Esm3MedEmb:
 class GearNet3Embedder:
     def __init__(self, gearnet_cp_file="preprocessing/mc_gearnet_edge.pth"):
 
-        from torchdrug import models, layers, data, transforms
-        from torchdrug.layers import geometry
-        from rdkit import Chem
-
-        from utils import ProteinsManager
         self.proteins_manager = ProteinsManager()
-        self.data = data
-        self.transforms = transforms
-        self.Chem = Chem
-        self.fold_tokenizer = AutoTokenizer.from_pretrained("facebook/esmfold_v1")
-        self.fold_model = EsmForProteinFolding.from_pretrained("facebook/esmfold_v1")
-        self.fold_model = self.fold_model.to(device).eval()
         self.gearnet_model = models.GearNet(input_dim=21, hidden_dims=[512, 512, 512, 512, 512, 512], num_relation=7,
                                             edge_input_dim=59,
                                             num_angle_bin=8,
@@ -91,21 +76,21 @@ class GearNet3Embedder:
             return None
         with open(pdb_file, "r") as f:
             pdb_content = f.read()
-        mol = self.Chem.MolFromPDBBlock(pdb_content, sanitize=False)
+        mol = Chem.MolFromPDBBlock(pdb_content, sanitize=False)
         if mol is None:
             return None
         try:
-            protein = self.data.Protein.from_molecule(mol)
+            protein = data.Protein.from_molecule(mol)
         except Exception as e:
             print(e)
             return None
-        truncate_transform = self.transforms.TruncateProtein(max_length=550, random=False)
-        protein_view_transform = self.transforms.ProteinView(view="residue")
-        transform = self.transforms.Compose([truncate_transform, protein_view_transform])
+        truncate_transform = transforms.TruncateProtein(max_length=550, random=False)
+        protein_view_transform = transforms.ProteinView(view="residue")
+        transform = transforms.Compose([truncate_transform, protein_view_transform])
         protein = {"graph": protein}
         protein = transform(protein)
         protein = protein["graph"]
-        protein = self.data.Protein.pack([protein])
+        protein = data.Protein.pack([protein])
         protein = self.graph_construction_model(protein)
         output = self.gearnet_model(protein.to(device), protein.node_feature.float().to(device))
         output = output['node_feature']
@@ -123,14 +108,25 @@ if __name__ == "__main__":
     from tqdm import tqdm
     from utils import ProteinsManager
 
+    from utils import ProteinsManager
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default="prot_bert", choices=["prot_bert", "esm3", "gearnet"])
     args = parser.parse_args()
     if args.model == "prot_bert":
+        from transformers import BertModel, BertTokenizer
+
         model = PortBert()
     elif args.model == "esm3":
+        from esm.models.esmc import ESMC
+        from esm.sdk.api import ESMProtein, LogitsConfig
+
         model = Esm3MedEmb()
     elif args.model == "gearnet":
+        from torchdrug import models, layers, data, transforms
+        from torchdrug.layers import geometry
+        from rdkit import Chem
+
         model = GearNet3Embedder()
     else:
         raise ValueError(f"Unknown model: {args.model}")
