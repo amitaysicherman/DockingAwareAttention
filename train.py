@@ -105,8 +105,10 @@ class EvalGen(TrainerCallback):
 
 def args_to_name(ec_type, daa_type, emb_dropout, add_ec_tokens, emb_suf, concat_vec):
     name = f"ec-{ec_type}_daa-{daa_type}_emb-{emb_dropout}_ectokens-{add_ec_tokens}{emb_suf}"
-    if concat_vec:
+    if concat_vec==1:
         name += "_concat"
+    elif concat_vec==2:
+        name += "_concat2"
     return name
 
 
