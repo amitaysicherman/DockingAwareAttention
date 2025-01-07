@@ -25,6 +25,9 @@ class ProteinsManager:
         for ec, id_ in zip(ec_lines, id_lines):
             self.ec_to_id[ec] = id_
             self.id_to_ec[id_] = ec
+        with open("datasets/ecreact/ec_fasta.txt", "r") as f:
+            self.id_to_seq = {id_: seq for id_, seq in zip(id_lines, f.read().splitlines()) if
+                              len(seq) > 0 and len(id_) > 0}
 
     def get_chunk(self, id_):
         return self.id_to_chunk[id_]
@@ -69,6 +72,10 @@ class ProteinsManager:
             return None
         return emb_file
 
+    def get_seq(self, id_):
+        if id_ not in self.id_to_seq:
+            return None
+        return self.id_to_seq[id_]
 
 class MoleculeManager:
     def __init__(self):
