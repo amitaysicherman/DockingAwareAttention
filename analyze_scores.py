@@ -82,8 +82,8 @@ train_df = load_df("train")
 train_tgt = train_df["tgt"].value_counts()
 test_df = load_df(args.split)
 test_df["num_train_tgt"] = test_df["tgt"].apply(lambda x: train_tgt.get(x, 0))
-test_df["docking_score_mean"] = test_df["rnx"].apply(
-    lambda x: get_reaction_docking_confidence(x, protein_manager, molecule_manager))
+test_df["good_dock"] = test_df["rnx"].apply(
+    lambda x: get_reaction_docking_confidence(x, protein_manager, molecule_manager))> -1.5
 
 names = []
 all_results_dicts = []
@@ -110,9 +110,8 @@ for run_name in os.listdir("results"):
     filter_df["ec"] = test_df.loc[filter_df[0], "ec"].values
     for i in range(1, 8):
         results.__setattr__(f"ec{i}", filter_df[filter_df["ec"] == i][1].mean())
-
-    good_docking = filter_df[filter_df["docking_score_mean"] >= -1.5]
-    results.good_docking = good_docking[1].mean()
+    filter_and_doc = filter_df[filter_df[0].isin(test_df[test_df["good_dock"]].index)]
+    results.good_docking = filter_and_doc[1].mean()
     all_results_dicts.append(dataclasses.asdict(results))
 all_results_df = pd.DataFrame(all_results_dicts)
 all_results_df.index = names
