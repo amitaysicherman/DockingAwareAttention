@@ -3,6 +3,7 @@ import os
 
 import pandas as pd
 import dataclasses
+from utils import ProteinsManager, MoleculeManager
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--epoch", type=float, default=8.0)
@@ -10,6 +11,29 @@ parser.add_argument("--k", type=int, default=5)
 parser.add_argument("--split", type=str, default="test")
 
 args = parser.parse_args()
+
+def get_reaction_docking_confidence(rxn, protein_manager: ProteinsManager, molecule_manager: MoleculeManager):
+    rnx = rxn.replace(" ", "")
+    src, ec = rnx.split("|")
+    pid = protein_manager.get_id(ec)
+    protein_base_dir = protein_manager.get_base_dir(pid)
+    if protein_base_dir is None:
+        return 0, 0, 0
+
+    mol_ids = [molecule_manager.get_id(mol_smiles) for mol_smiles in src.split(".")]
+    scores = []
+    for mid in mol_ids:
+        # mol_file = glob.glob(f"{protein_base_dir}/{mid}/complex_0/rank1_confidence*.sdf")
+        if not os.path.exists(f"{protein_base_dir}/{mid}/complex_0/"):
+            continue
+        mol_file=[x for x in os.listdir(f"{protein_base_dir}/{mid}/complex_0/") if x.startswith("rank1_confidence")]
+        if len(mol_file) == 0:
+            continue
+        mol_file = mol_file[0]
+        scores.append(float(mol_file.split("confidence")[-1].replace(".sdf", "")))
+    if len(scores) == 0:
+        return 0, 0, 0
+    return np.mean(scores), min(scores), max(scores)
 
 
 def load_df(split):
@@ -25,7 +49,7 @@ def load_df(split):
         ds = f.read().splitlines()
     ds = [x.replace("_reaction_smiles", "") for x in ds]
     assert len(src) == len(tgt) == len(ec) == len(ds), f"{len(src)} {len(tgt)} {len(ec)} {len(ds)}"
-    df = pd.DataFrame({"src": src, "tgt": tgt, "ec": ec, "ds": ds})
+    df = pd.DataFrame({"src": src, "tgt": tgt, "ec": ec, "ds": ds, 'rnx': src_ec})
     return df
 
 
@@ -44,15 +68,20 @@ class Results:
     ec5: float = 0.0
     ec6: float = 0.0
     ec7: float = 0.0
-
+    good_docking: float = 0.0
     def __repr__(self):
         return f"Non-filter: {self.non_filter:.4f}, Full: {self.full:.4f}, Brenda: {self.brenda:.4f}, Metanetx: {self.metanetx:.4f}, Pathbank: {self.pathbank:.4f}, Rhea: {self.rhea:.4f}, EC1: {self.ec1:.4f}, EC2: {self.ec2:.4f}, EC3: {self.ec3:.4f}, EC4: {self.ec4:.4f}, EC5: {self.ec5:.4f}, EC6: {self.ec6:.4f}, EC7: {self.ec7:.4f}"
 
-
+protein_manager = ProteinsManager()
+molecule_manager = MoleculeManager()
 train_df = load_df("train")
 train_tgt = train_df["tgt"].value_counts()
 test_df = load_df(args.split)
 test_df["num_train_tgt"] = test_df["tgt"].apply(lambda x: train_tgt.get(x, 0))
+test_df["docking_score_mean"], test_df["docking_score_min"], test_df["docking_score_max"] = zip(
+    test_df["rnx"].apply(
+        lambda x: get_reaction_docking_confidence(x, protein_manager, molecule_manager)))
+
 names = []
 all_results_dicts = []
 for run_name in os.listdir("results"):
@@ -78,6 +107,9 @@ for run_name in os.listdir("results"):
     filter_df["ec"] = test_df.loc[filter_df[0], "ec"].values
     for i in range(1, 8):
         results.__setattr__(f"ec{i}", filter_df[filter_df["ec"] == i][1].mean())
+
+    good_docking = filter_df[filter_df["docking_score_min"] >=-1.5]
+    results.good_docking = good_docking[1].mean()
     all_results_dicts.append(dataclasses.asdict(results))
 all_results_df = pd.DataFrame(all_results_dicts)
 all_results_df.index = names

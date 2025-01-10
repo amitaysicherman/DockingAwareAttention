@@ -1,5 +1,34 @@
+import os
+
+import numpy as np
 import pandas as pd
 from preprocessing.tokenizer_utils import SMILES_REGEX
+from utils import ProteinsManager, MoleculeManager
+import glob
+
+
+def get_reaction_docking_confidence(rxn, protein_manager: ProteinsManager, molecule_manager: MoleculeManager):
+    rnx = rxn.replace(" ", "")
+    src, ec = rnx.split("|")
+    pid = protein_manager.get_id(ec)
+    protein_base_dir = protein_manager.get_base_dir(pid)
+    if protein_base_dir is None:
+        return 0, 0, 0
+
+    mol_ids = [molecule_manager.get_id(mol_smiles) for mol_smiles in src.split(".")]
+    scores = []
+    for mid in mol_ids:
+        # mol_file = glob.glob(f"{protein_base_dir}/{mid}/complex_0/rank1_confidence*.sdf")
+        if not os.path.exists(f"{protein_base_dir}/{mid}/complex_0/"):
+            continue
+        mol_file=[x for x in os.listdir(f"{protein_base_dir}/{mid}/complex_0/") if x.startswith("rank1_confidence")]
+        if len(mol_file) == 0:
+            continue
+        mol_file = mol_file[0]
+        scores.append(float(mol_file.split("confidence")[-1].replace(".sdf", "")))
+    if len(scores) == 0:
+        return 0, 0, 0
+    return np.mean(scores), min(scores), max(scores)
 
 
 def load_df(split):
@@ -13,7 +42,7 @@ def load_df(split):
     with open(f"datasets/ecreact/datasets-{split}.txt", "r") as f:
         ds = f.read().splitlines()
     assert len(src) == len(tgt) == len(ec) == len(ds), f"{len(src)} {len(tgt)} {len(ec)} {len(ds)}"
-    df = pd.DataFrame({"src": src, "tgt": tgt, "ec": ec, "ds": ds})
+    df = pd.DataFrame({"src": src, "tgt": tgt, "ec": ec, "ds": ds,'rnx':src_ec})
     return df
 
 
@@ -25,7 +54,8 @@ class SampleTags:
     def __init__(self, split, common_molecules=[], common_ec=[]):
         self.common_molecules = common_molecules
         self.common_ec = common_ec
-
+        self.protein_manager = ProteinsManager()
+        self.molecule_manager = MoleculeManager()
         self.df = load_df(split)
         self.train_df = load_df("train")
         self.add_all_tag()
@@ -80,6 +110,12 @@ class SampleTags:
         self.df["legal_ec"] = self.df["ec"].apply(
             lambda x: all([y.replace("[", "").replace("]", "")[1:].isdigit() for y in x.split(" ")]))
 
+    def add_docking_score(self):
+        # add the min, max and mean docking score
+        self.df["docking_score_mean"], self.df["docking_score_min"], self.df["docking_score_max"] = zip(
+            *self.df["rnx"].apply(
+                lambda x: get_reaction_docking_confidence(x, self.protein_manager, self.molecule_manager)))
+
     def add_all_tag(self):
         self.add_number_of_molecules()
         self.add_number_of_large_molecules()
@@ -97,6 +133,7 @@ class SampleTags:
         self.add_most_common_molecules(n=50)
         self.add_most_common_ec(n=50)
         self.add_legel_ec()
+        self.add_docking_score()
 
     def get_query_indexes(self, cols_funcs):
         filtered_df = self.df.copy()
