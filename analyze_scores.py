@@ -2,6 +2,7 @@ import argparse
 import os
 
 import pandas as pd
+import numpy as np
 import dataclasses
 from utils import ProteinsManager, MoleculeManager
 
