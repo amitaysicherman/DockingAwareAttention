@@ -1,5 +1,7 @@
 #paper: https://onlinelibrary.wiley.com/doi/full/10.1002/adma.202304654
 #Liposome: build from:
+#names = ['DPPC', 'colesterol', 'DSPE-PEG1000', 'DSPE-PEG2000']
+#rartio = [0.65, 0.3, 0.025, 0.025]
 #DPPC: "CCCCCCCCCCCCCCCC(=O)OCC(COP(=O)([O-])OCC[N+](C)(C)C)OC(=O)CCCCCCCCCCCCCCC" (https://www.sigmaaldrich.com/IL/en/product/sigma/p4329?srsltid=AfmBOop3hx0ga6no51kkig1CelEIJMlP4HllTqoSV-m1PRkgRy0MpNyz)
 #colesterol: "CC(C)CCCC(C)C1CCC2C3CC=C4CC(O)CCC4(C)C3CCC12C" (https://www.sigmaaldrich.com/IL/en/product/sigma/c8667?srsltid=AfmBOorNcjbvGlhk-hvd6TFoaC-bkTx6RN_6SNEGJqByyRh2GoX5LABK)
 #DSPE-PEG(1000):"CCCCCCCCCCCCCCCCCC(=O)OCC(COP(=O)([O-])OCCNC(=O)CC=COOOOOOOOOOOOOOOOOOOOCCOOCC(=O)O)OC(=O)CCCCCCCCCCCCCCCCC" (https://www.sigmaaldrich.com/IL/en/product/avanti/880239p?srsltid=AfmBOoqcf_meeyh9jiFDjwsw_rez_hSp5g2-TLduZjb8tRcJGs59Gey6)
@@ -20,3 +22,5 @@ python -m inference --config default_inference_args.yaml --protein_path '../tran
 python -m inference --config default_inference_args.yaml --protein_path '../transferin/transferrin.pdb' --ligand 'CC(C)CCCC(C)C1CCC2C3CC=C4CC(O)CCC4(C)C3CCC12C' --out_dir '../transferin/colesterol'
 python -m inference --config default_inference_args.yaml --protein_path '../transferin/transferrin.pdb' --ligand 'CCCCCCCCCCCCCCCCCC(=O)OCC(COP(=O)([O-])OCCNC(=O)CC=COOOOOOOOOOOOOOOOOOOOCCOOCC(=O)O)OC(=O)CCCCCCCCCCCCCCCCC' --out_dir '../transferin/DSPE-PEG1000'
 python -m inference --config default_inference_args.yaml --protein_path '../transferin/transferrin.pdb' --ligand 'CCCCCCCCCCCCCCCCCC(=O)OCC(COP(=O)([O-])OCCNC(=O)OCCOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOC=CN)OC(=O)CCCCCCCCCCCCCCCCC' --out_dir '../transferin/DSPE-PEG2000'
+
+

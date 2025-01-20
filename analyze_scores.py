@@ -1,31 +1,25 @@
-import argparse
 import os
-
+from utils import ProteinsManager, MoleculeManager
+from preprocessing.tokenizer_utils import tokenize_reaction_smiles
+import editdistance
 import pandas as pd
 import numpy as np
-import dataclasses
-from utils import ProteinsManager, MoleculeManager
-
-parser = argparse.ArgumentParser()
-parser.add_argument("--epoch", type=float, default=8.0)
-parser.add_argument("--k", type=int, default=5)
-parser.add_argument("--split", type=str, default="test")
-
-args = parser.parse_args()
+from sklearn.tree import DecisionTreeClassifier, plot_tree, ExtraTreeClassifier
+import matplotlib.pyplot as plt
+from sklearn import tree
+import random
 
 
-def get_reaction_docking_confidence(rxn, protein_manager: ProteinsManager, molecule_manager: MoleculeManager):
+def get_reaction_docking_confidence(rxn):
     rnx = rxn.replace(" ", "")
     src, ec = rnx.split("|")
     pid = protein_manager.get_id(ec)
     protein_base_dir = protein_manager.get_base_dir(pid)
     if protein_base_dir is None:
-        return 0
-
+        return -100
     mol_ids = [molecule_manager.get_id(mol_smiles) for mol_smiles in src.split(".")]
     scores = []
     for mid in mol_ids:
-        # mol_file = glob.glob(f"{protein_base_dir}/{mid}/complex_0/rank1_confidence*.sdf")
         if not os.path.exists(f"{protein_base_dir}/{mid}/complex_0/"):
             continue
         mol_file = [x for x in os.listdir(f"{protein_base_dir}/{mid}/complex_0/") if x.startswith("rank1_confidence")]
@@ -34,16 +28,30 @@ def get_reaction_docking_confidence(rxn, protein_manager: ProteinsManager, molec
         mol_file = mol_file[0]
         scores.append(float(mol_file.split("confidence")[-1].replace(".sdf", "")))
     if len(scores) == 0:
-        return 0
-    return np.mean(scores)
+        return -100
+    return np.max(scores)
+
+
+def get_reaction_len(tgt):
+    return len(tokenize_reaction_smiles(tgt).split(" "))
+
+
+def get_reaction_src_len(all_src):
+    return max([len(tokenize_reaction_smiles(src).split(" ")) for src in all_src.split(".")])
+
+
+def egt_reaction_edit_distance(src, tgt):
+    tgt = tokenize_reaction_smiles(tgt).split(" ")
+    return min([editdistance.eval(tokenize_reaction_smiles(src_).split(" "), tgt) for src_ in src.split(".")])
 
 
 def load_df(split):
     with open(f"datasets/ecreact/src-{split}.txt", "r") as f:
         src_ec = f.read().splitlines()
     src = [x.split("|")[0].replace(" ", "") for x in src_ec]
-    ec = [x.split("|")[1].strip() for x in src_ec]
-    ec = [int(x.split(" ")[0][2:-1]) for x in ec]
+    ec_full = [x.split("|")[1].strip() for x in src_ec]
+
+    ec = [int(x.split(" ")[0][2:-1]) for x in ec_full]
     with open(f"datasets/ecreact/tgt-{split}.txt", "r") as f:
         tgt = f.read().splitlines()
     tgt = [x.replace(" ", "") for x in tgt]
@@ -51,68 +59,138 @@ def load_df(split):
         ds = f.read().splitlines()
     ds = [x.replace("_reaction_smiles", "") for x in ds]
     assert len(src) == len(tgt) == len(ec) == len(ds), f"{len(src)} {len(tgt)} {len(ec)} {len(ds)}"
-    df = pd.DataFrame({"src": src, "tgt": tgt, "ec": ec, "ds": ds, 'rnx': src_ec})
+    df = pd.DataFrame({"src": src, "tgt": tgt, "ec": ec, "ds": ds, 'rnx': src_ec, 'ec_full': ec_full})
     return df
 
 
-@dataclasses.dataclass
-class Results:
-    non_filter: float = 0.0
-    full: float = 0.0
-    brenda: float = 0.0
-    metanetx: float = 0.0
-    pathbank: float = 0.0
-    rhea: float = 0.0
-    ec1: float = 0.0
-    ec2: float = 0.0
-    ec3: float = 0.0
-    ec4: float = 0.0
-    ec5: float = 0.0
-    ec6: float = 0.0
-    ec7: float = 0.0
-    good_docking: float = 0.0
+def analyze_model_performance(df, attr_columns, model1_col_, model2_col_, fit_k=1, predict_k=[1, 3, 5]):
+    model1_col = f"{model1_col_}_{fit_k}"
+    model2_col = f"{model2_col_}_{fit_k}"
+    df = df.dropna(subset=[model1_col, model2_col])
+    df['class'] = df.apply(
+        lambda row: "DAA" if row[model1_col] == 1 and row[model2_col] == 0 else "PAPER" if row[model1_col] == 0 and row[
+            model2_col] == 1 else "SAME", axis=1)
+    clf = DecisionTreeClassifier(max_depth=2, min_samples_leaf=50, max_features=2)  # "sqrt")
+    df_in = df[df['class'] != "SAME"]
+    clf.fit(df_in[attr_columns], df_in['class'])
+    parts = clf.apply(df[attr_columns])
+    df.loc[:, 'part'] = parts
 
-    def __repr__(self):
-        return f"Non-filter: {self.non_filter:.4f}, Full: {self.full:.4f}, Brenda: {self.brenda:.4f}, Metanetx: {self.metanetx:.4f}, Pathbank: {self.pathbank:.4f}, Rhea: {self.rhea:.4f}, EC1: {self.ec1:.4f}, EC2: {self.ec2:.4f}, EC3: {self.ec3:.4f}, EC4: {self.ec4:.4f}, EC5: {self.ec5:.4f}, EC6: {self.ec6:.4f}, EC7: {self.ec7:.4f}"
+    for k in predict_k:
+        model1_col = f"{model1_col_}_{k}"
+        model2_col = f"{model2_col_}_{k}"
+        print("\nLeaf Statistics:")
+        print("Leaf ID | Samples | Model1 Acc | Model2 Acc | Diff | Relative Diff")
+        print("-" * 70)
 
+        for part in np.unique(parts):
+            df_p = df[df['part'] == part]
+            a, b = df_p[model1_col].mean(), df_p[model2_col].mean()
+
+            print(f"Node {part:2d} | {len(df_p):7d} | {a:9.2%} | {b:9.2%} | {(a - b):5.2%} | {(a - b) / b:12.2%} ")
+
+        print("\nClass Labels:", clf.classes_)
+
+        fig, ax = plt.subplots(figsize=(12, 12))
+        tree.plot_tree(clf,
+                       ax=ax,
+                       feature_names=attr_columns,
+                       class_names=clf.classes_,
+                       filled=True,
+                       node_ids=True,  # This adds node numbers to the visualization
+                       rounded=True)
+        plt.title(f"Decision Tree for k={k}")
+        plt.show()
+
+
+class Args:
+    epoch = 8.0
+    k = 5
+    split = "test"
+
+
+args = Args()
 
 protein_manager = ProteinsManager()
 molecule_manager = MoleculeManager()
 train_df = load_df("train")
-train_tgt = train_df["tgt"].value_counts()
+train_tgt_count = train_df["tgt"].value_counts()
+train_src_count = train_df["src"].value_counts()
+train_ec_count = train_df["ec_full"].value_counts()
+
 test_df = load_df(args.split)
-test_df["num_train_tgt"] = test_df["tgt"].apply(lambda x: train_tgt.get(x, 0))
-test_df["good_dock"] = test_df["rnx"].apply(
-    lambda x: get_reaction_docking_confidence(x, protein_manager, molecule_manager))> -1.5
+test_df["src_count"] = test_df["src"].apply(lambda x: train_src_count.get(x, 0))
+test_df["tgt_count"] = test_df["tgt"].apply(lambda x: train_tgt_count.get(x, 0))
+test_df["good_dock"] = test_df["rnx"].apply(lambda x: get_reaction_docking_confidence(x))
+test_df["reaction_len"] = test_df["tgt"].apply(lambda x: get_reaction_len(x))
+test_df["reaction_src_len"] = test_df["src"].apply(lambda x: get_reaction_src_len(x))
+
+test_df["edit_distance"] = test_df.apply(lambda x: egt_reaction_edit_distance(x["src"], x["tgt"]), axis=1)
+test_df["ec_count"] = test_df["ec_full"].apply(lambda x: train_ec_count.get(x, 0))
+# convert ec to binary columns
+for i in range(1, 7):
+    test_df[f"ec_{i}"] = test_df["ec"].apply(lambda x: 1 if x == i else 0)
 
 names = []
 all_results_dicts = []
-for run_name in os.listdir("results"):
+for run_name in ['ec-ECType.PRETRAINED_daa-4_emb-0.0_ectokens-1',
+                 'ec-ECType.PAPER_daa-0_emb-0.0_ectokens-0',
+                 'ec-ECType.NO_EC_daa-0_emb-0.0_ectokens-0']:  # os.listdir("results"):
+    for k in [1, 3, 5]:
+        file_name = f"results/{run_name}/test_8.0_k{k}.txt"
+        if not os.path.exists(file_name):
+            continue
+        names.append(run_name)
+        df = pd.read_csv(file_name, header=None)
+        df.set_index(0, inplace=True)
+        test_df[f"{run_name}_{k}"] = df[1]
 
-    file_name = f"results/{run_name}/{args.split}_{args.epoch}_k{args.k}.txt"
-    if not os.path.exists(file_name):
-        continue
-    names.append(run_name)
-    df = pd.read_csv(file_name, header=None)
-    results = Results()
-    results.non_filter = df[1].mean()
-    zero_train_tgt = test_df[test_df["num_train_tgt"] == 0].index
+rules = [
+    [('reaction_src_len', 100)],
+    [('tgt_count', 0)],
+    [('src_count', 0)],
+    [('edit_distance', 25)],
+    [('ec_count', 10)],
+    [('ec_count', 5298), ('good_dock', -2.51)],
+    [('ec_count', 10), ('good_dock', -2.51)],
+    [('edit_distance', 30), ('good_dock', -2.58)],
+    [('reaction_src_len', 100), ('good_dock', -2.58)],
+    [('tgt_count', 0), ('edit_distance', 25)],
+    [('src_count', 0), ('reaction_src_len', 100)],
 
-    filter_df = df[df[0].isin(zero_train_tgt)]
-    results.full = filter_df[1].mean()
+    [('edit_distance', 25), ('ec_count', 10)],
+    [('edit_distance', 25), ('reaction_src_len', 100)],
+    [('good_dock', -2.5), ('ec_count', 100), ('reaction_src_len', 100)],
 
-    filter_df["ds"] = test_df.loc[filter_df[0], "ds"].values
-    results.brenda = filter_df[filter_df["ds"] == "brenda"][1].mean()
-    results.metanetx = filter_df[filter_df["ds"] == "metanetx"][1].mean()
-    results.pathbank = filter_df[filter_df["ds"] == "pathbank"][1].mean()
-    results.rhea = filter_df[filter_df["ds"] == "rhea"][1].mean()
+]
 
-    filter_df["ec"] = test_df.loc[filter_df[0], "ec"].values
-    for i in range(1, 8):
-        results.__setattr__(f"ec{i}", filter_df[filter_df["ec"] == i][1].mean())
-    filter_and_doc = filter_df[filter_df[0].isin(test_df[test_df["good_dock"]].index)]
-    results.good_docking = filter_and_doc[1].mean()
-    all_results_dicts.append(dataclasses.asdict(results))
-all_results_df = pd.DataFrame(all_results_dicts)
-all_results_df.index = names
-print(all_results_df.to_csv("results/all.csv"))
+
+def rule_to_str(rule):
+    return " & ".join(
+        [f"{col} > {val}" if col not in ["tgt_count", "src_count"] else f"{col} <= {val}" for col, val in rule])
+
+
+for rule in rules:
+    print(rule_to_str(rule))
+    data = test_df
+    for col, val in rule:
+        if col == "tgt_count" or col == "src_count":
+            data = data[data[col] <= val]
+        else:
+            data = data[data[col] > val]
+    for k in [1, 3, 5]:
+        model1_col = f'ec-ECType.PRETRAINED_daa-4_emb-0.0_ectokens-1_{k}'
+        model2_col = f'ec-ECType.PAPER_daa-0_emb-0.0_ectokens-0_{k}'
+        model3_col = f'ec-ECType.NO_EC_daa-0_emb-0.0_ectokens-0_{k}'
+        a, b, c = data[model1_col].mean() * 100, data[model2_col].mean() * 100, data[model3_col].mean() * 100
+        m = max(b, c)
+        print(f"{a:.2f},{b:.2f},{c:.2f},{a - m:.2f}({(a - m) / m:.2%})")
+ec_cols = [f"ec_{i}" for i in range(1, 7)]
+attr_columns = ['src_count', 'tgt_count', 'good_dock', 'reaction_len', 'edit_distance', 'ec_count',"reaction_src_len"]
+attr_columns =list(np.random.choice(attr_columns, len(attr_columns) , replace=False))
+print(attr_columns)
+
+model1_col = 'ec-ECType.PRETRAINED_daa-4_emb-0.0_ectokens-1'
+model2_col = 'ec-ECType.PAPER_daa-0_emb-0.0_ectokens-0'
+analyze_model_performance(test_df[test_df['src_count']==0], attr_columns, model1_col,
+                          model2_col, fit_k=3, predict_k=[1, 3, 5])
