@@ -1,6 +1,6 @@
 # Docking-Aware Attention: Dynamic Protein Representations through Molecular Context Integration
 
-Official implementation of "Docking-Aware Attention: Dynamic Protein Representations through Molecular Context Integration" (KDD 2025).
+Official implementation of "Docking-Aware Attention: Dynamic Protein Representations through Molecular Context Integration".
 
 ## Overview
 
