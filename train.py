@@ -30,6 +30,8 @@ def suf_to_dim(suf):
         return 3072
     if suf == "_pb":
         return 1024
+    if suf == "_re":
+        return 256
     raise ValueError(f"Unknown suffix: {suf}")
 
 
