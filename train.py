@@ -181,7 +181,7 @@ def main(ec_type, daa_type, batch_size, batch_size_factor, learning_rate, max_le
         num_train_epochs=epochs,
         warmup_steps=0,
         logging_steps=1 / (epochs * epochs),
-        save_steps=1 / epochs,
+        save_steps=1 / (epochs * epochs),
         save_total_limit=3,
         save_strategy="steps",
         eval_strategy="no",
