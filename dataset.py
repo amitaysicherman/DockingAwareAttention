@@ -70,15 +70,16 @@ class SeqToSeqDataset(Dataset):
                                                        only_src=True)
                             for src in tqdm(src_lines)]
             errors = 0
-            for es_index in range(len(emb_lines)):
-                if emb_lines[es_index] is None or scores_lines[es_index] is None:
-                    continue
-                emb = np.load(emb_lines[es_index])[0]
-                if len(emb) != len(scores_lines[es_index]):
-                    emb_lines[es_index] = None
-                    scores_lines[es_index] = None
-                    errors += 1
-            print(f"Errors: {errors}")
+            if self.emb_suf != "_re":  # ReactEmed is not sequence - length always 1
+                for es_index in range(len(emb_lines)):
+                    if emb_lines[es_index] is None or scores_lines[es_index] is None:
+                        continue
+                    emb = np.load(emb_lines[es_index])[0]
+                    if len(emb) != len(scores_lines[es_index]):
+                        emb_lines[es_index] = None
+                        scores_lines[es_index] = None
+                        errors += 1
+                print(f"Errors: {errors}")
         assert len(src_lines) == len(tgt_lines) == len(emb_lines) == len(scores_lines)
 
         if self.sample_size is not None:
