@@ -70,7 +70,7 @@ class SeqToSeqDataset(Dataset):
                                                        only_src=True)
                             for src in tqdm(src_lines)]
             errors = 0
-            if self.emb_suf != "_re":  # ReactEmed is not sequence - length always 1
+            if self.emb_suf not in ["_re", "_gn1", "_pb1"]:  # ReactEmed is not sequence - length always 1
                 for es_index in range(len(emb_lines)):
                     if emb_lines[es_index] is None or scores_lines[es_index] is None:
                         continue
