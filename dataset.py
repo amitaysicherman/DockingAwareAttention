@@ -66,9 +66,14 @@ class SeqToSeqDataset(Dataset):
             emb_lines = [self.proteins_manager.get_emb_file(prot_id, self.emb_suf) if prot_id is not None else None for
                          prot_id in
                          prot_ids]
-            scores_lines = [get_reaction_attention_emd(src, self.proteins_manager, self.molecule_manager, tokens=True,
-                                                       only_src=True)
-                            for src in tqdm(src_lines)]
+
+            if self.emb_suf in ["_re", "_gn1", "_pb1"]:
+                scores_lines = [scores_zero] * len(src_lines)
+            else:
+                scores_lines = [
+                    get_reaction_attention_emd(src, self.proteins_manager, self.molecule_manager, tokens=True,
+                                               only_src=True)
+                    for src in tqdm(src_lines)]
             errors = 0
             if self.emb_suf not in ["_re", "_gn1", "_pb1"]:  # ReactEmed is not sequence - length always 1
                 for es_index in range(len(emb_lines)):
