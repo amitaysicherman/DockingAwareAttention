@@ -4,7 +4,7 @@
 #SBATCH --requeue
 #SBATCH -c 8
 #SBATCH --gres=gpu:1
-#SBATCH -w bruno[1-3],euler1,houdini,newton5,nlp-l40-[1-2],tdk-bm4,dym-lab[1-2],galileo[1-2],newton[3-4],nlp-a40-1,chuck[1-2] 
+#SBATCH -w bruno[1-3],euler1,houdini,newton5,nlp-l40-[1-2],tdk-bm4,dym-lab[1-2],galileo[1-2],newton[3-4],nlp-a40-1,chuck[1-2]
 #SBATCH --array=1-3
 
 #MASTER_PORT=$((29500 + SLURM_ARRAY_TASK_ID))
