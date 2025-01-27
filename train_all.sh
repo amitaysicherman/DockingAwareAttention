@@ -21,7 +21,7 @@
 #     --ec_type 2 --daa_type 4 --add_ec_tokens 1"
 configs=" --ec_type 2 --daa_type 1 --add_ec_tokens 1 --emb_suf _pb|\
  --ec_type 2 --daa_type 1 --add_ec_tokens 1 --emb_suf _gn|\
-  --ec_type 2 --daa_type 1 --add_ec_tokens 1 --emb_suf _re|\
+  --ec_type 2 --daa_type 1 --add_ec_tokens 1 --emb_suf _re"
 
 # Split the config string into an array using '|' as a delimiter
 IFS='|' read -ra config_array <<< "$configs"
