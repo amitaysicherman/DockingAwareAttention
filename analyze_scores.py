@@ -9,6 +9,9 @@ import matplotlib.pyplot as plt
 from sklearn import tree
 import random
 
+from rdkit import Chem
+from rdkit.Chem import GraphDescriptors
+
 
 def get_reaction_docking_confidence(rxn):
     rnx = rxn.replace(" ", "")
@@ -39,6 +42,17 @@ def get_reaction_len(tgt):
 def get_reaction_src_len(all_src):
     return max([len(tokenize_reaction_smiles(src).split(" ")) for src in all_src.split(".")])
 
+
+def get_bertz_ct(src: str) -> float:
+    v = -1
+    for smiles in src.split("."):
+
+        mol = Chem.MolFromSmiles(smiles)
+        if mol is None:
+            continue
+
+        v = max(v, GraphDescriptors.BertzCT(mol))
+    return v
 
 def egt_reaction_edit_distance(src, tgt):
     tgt = tokenize_reaction_smiles(tgt).split(" ")
@@ -115,16 +129,22 @@ protein_manager = ProteinsManager()
 molecule_manager = MoleculeManager()
 train_df = load_df("train")
 train_tgt_count = train_df["tgt"].value_counts()
+train_src_mols= train_df["src"].apply(lambda x: x.split("."))
+train_src_mols_set=set()
+for mols in train_src_mols:
+    train_src_mols_set.update(mols)
+
 train_src_count = train_df["src"].value_counts()
 train_ec_count = train_df["ec_full"].value_counts()
 
 test_df = load_df(args.split)
 test_df["src_count"] = test_df["src"].apply(lambda x: train_src_count.get(x, 0))
+test_df['mol_in_src'] = test_df['src'].apply(lambda x: all([mol in train_src_mols_set for mol in x.split(".")]))
 test_df["tgt_count"] = test_df["tgt"].apply(lambda x: train_tgt_count.get(x, 0))
 test_df["good_dock"] = test_df["rnx"].apply(lambda x: get_reaction_docking_confidence(x))
 test_df["reaction_len"] = test_df["tgt"].apply(lambda x: get_reaction_len(x))
 test_df["reaction_src_len"] = test_df["src"].apply(lambda x: get_reaction_src_len(x))
-
+test_df['berts'] = test_df['src'].apply(get_bertz_ct)
 test_df["edit_distance"] = test_df.apply(lambda x: egt_reaction_edit_distance(x["src"], x["tgt"]), axis=1)
 test_df["ec_count"] = test_df["ec_full"].apply(lambda x: train_ec_count.get(x, 0))
 # convert ec to binary columns
@@ -186,11 +206,11 @@ for rule in rules:
         m = max(b, c)
         print(f"{a:.2f},{b:.2f},{c:.2f},{a - m:.2f}({(a - m) / m:.2%})")
 ec_cols = [f"ec_{i}" for i in range(1, 7)]
-attr_columns = ['src_count', 'tgt_count', 'good_dock', 'reaction_len', 'edit_distance', 'ec_count',"reaction_src_len"]
-attr_columns =list(np.random.choice(attr_columns, len(attr_columns) , replace=False))
+attr_columns = ['src_count', 'tgt_count', 'good_dock', 'reaction_len', 'edit_distance', 'ec_count', "reaction_src_len"]
+attr_columns = list(np.random.choice(attr_columns, len(attr_columns), replace=False))
 print(attr_columns)
 
 model1_col = 'ec-ECType.PRETRAINED_daa-4_emb-0.0_ectokens-1'
 model2_col = 'ec-ECType.PAPER_daa-0_emb-0.0_ectokens-0'
-analyze_model_performance(test_df[test_df['src_count']==0], attr_columns, model1_col,
+analyze_model_performance(test_df[test_df['src_count'] == 0], attr_columns, model1_col,
                           model2_col, fit_k=3, predict_k=[1, 3, 5])
