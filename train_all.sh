@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --time=7-00
-#SBATCH --mem=256G
+#SBATCH --mem=64G
 #SBATCH --requeue
 #SBATCH -c 8
 #SBATCH --gres=gpu:L40:1
