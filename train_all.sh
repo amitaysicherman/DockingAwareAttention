@@ -4,7 +4,7 @@
 #SBATCH --requeue
 #SBATCH -c 8
 #SBATCH --gres=gpu:L40:1
-#SBATCH --array=1-2
+#SBATCH --array=1-3
 
 #MASTER_PORT=$((29500 + SLURM_ARRAY_TASK_ID))
 #echo "MASTER_PORT: $MASTER_PORT"
