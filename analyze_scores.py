@@ -54,6 +54,7 @@ def get_bertz_ct(src: str) -> float:
         v = max(v, GraphDescriptors.BertzCT(mol))
     return v
 
+
 def egt_reaction_edit_distance(src, tgt):
     tgt = tokenize_reaction_smiles(tgt).split(" ")
     return min([editdistance.eval(tokenize_reaction_smiles(src_).split(" "), tgt) for src_ in src.split(".")])
@@ -124,13 +125,19 @@ class Args:
 
 
 args = Args()
-
+res_cols = ['ec-ECType.PRETRAINED_daa-4_emb-0.0_ectokens-1',
+            'ec-ECType.PAPER_daa-0_emb-0.0_ectokens-0',
+            'ec-ECType.NO_EC_daa-0_emb-0.0_ectokens-0',
+            "ec-ECType.PRETRAINED_daa-1_emb-0.0_ectokens-1_pb1",
+            "ec-ECType.PRETRAINED_daa-1_emb-0.0_ectokens-1_gn1",
+            "ec-ECType.PRETRAINED_daa-1_emb-0.0_ectokens-1_re",
+            "ec-ECType.PRETRAINED_daa-1_emb-0.0_ectokens-1"]
 protein_manager = ProteinsManager()
 molecule_manager = MoleculeManager()
 train_df = load_df("train")
 train_tgt_count = train_df["tgt"].value_counts()
-train_src_mols= train_df["src"].apply(lambda x: x.split("."))
-train_src_mols_set=set()
+train_src_mols = train_df["src"].apply(lambda x: x.split("."))
+train_src_mols_set = set()
 for mols in train_src_mols:
     train_src_mols_set.update(mols)
 
@@ -153,9 +160,7 @@ for i in range(1, 7):
 
 names = []
 all_results_dicts = []
-for run_name in ['ec-ECType.PRETRAINED_daa-4_emb-0.0_ectokens-1',
-                 'ec-ECType.PAPER_daa-0_emb-0.0_ectokens-0',
-                 'ec-ECType.NO_EC_daa-0_emb-0.0_ectokens-0']:  # os.listdir("results"):
+for run_name in res_cols:  # os.listdir("results"):
     for k in [1, 3, 5]:
         file_name = f"results/{run_name}/test_8.0_k{k}.txt"
         if not os.path.exists(file_name):
@@ -192,19 +197,22 @@ def rule_to_str(rule):
 
 for rule in rules:
     print(rule_to_str(rule))
-    data = test_df
+    data = test_df.copy()
+    cols_to_use = [f'{c}_{k}' for c in res_cols for k in [1, 3, 5]] + [['tgt_count', 'berts']]
+    data = data[[c for c in cols_to_use if c in data.columns]].dropna()
     for col, val in rule:
         if col == "tgt_count" or col == "src_count":
             data = data[data[col] <= val]
         else:
             data = data[data[col] > val]
-    for k in [1, 3, 5]:
-        model1_col = f'ec-ECType.PRETRAINED_daa-4_emb-0.0_ectokens-1_{k}'
-        model2_col = f'ec-ECType.PAPER_daa-0_emb-0.0_ectokens-0_{k}'
-        model3_col = f'ec-ECType.NO_EC_daa-0_emb-0.0_ectokens-0_{k}'
-        a, b, c = data[model1_col].mean() * 100, data[model2_col].mean() * 100, data[model3_col].mean() * 100
-        m = max(b, c)
-        print(f"{a:.2f},{b:.2f},{c:.2f},{a - m:.2f}({(a - m) / m:.2%})")
+    all_res = []
+    for r_col in res_cols:
+        t_res = []
+        for k in [1, 3, 5]:
+            t_res.append(data[f"{r_col}_{k}"].mean())
+        all_res.append(t_res)
+    res_df = pd.DataFrame(all_res, columns=[1, 3, 5], index=res_cols)
+    print(res_df.to_csv())
 ec_cols = [f"ec_{i}" for i in range(1, 7)]
 attr_columns = ['src_count', 'tgt_count', 'good_dock', 'reaction_len', 'edit_distance', 'ec_count', "reaction_src_len"]
 attr_columns = list(np.random.choice(attr_columns, len(attr_columns), replace=False))
