@@ -167,16 +167,6 @@ DAA-generated representations also achieve state-of-the-art performance on the B
 | **Our Model (DAA-based)** | **76.12** | **71.45** | **69.21** |
 *(Refer to the paper for the full list of DTI baselines)*
 
-## Citation
-
-If you find this code or our work useful for your research, please cite our paper:
-
-```bibtex
-@inproceedings{sicherman2025daa,
-  title={Docking-Aware Attention: Dynamic Protein Representations through Molecular Context Integration},
-  author={Sicherman, Amitay and Radinsky, Kira},
-}
-```
 
 ## License
 
@@ -186,6 +176,3 @@ This project is licensed under the MIT License - see the `LICENSE` file for deta
 
 We thank the authors of ESM, DiffDock, and ECREACT for making their code and data publicly available.
 
-## GenAI Usage Disclosure
-
-The paper's text was partially revised for clarity and form with the assistance of Google's Gemini 2.5 Pro. No generative AI was used for this work's data, code, or experimental design aspects.
