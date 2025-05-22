@@ -25,7 +25,7 @@ Our method has demonstrated state-of-the-art performance on enzymatic reaction p
 
 ```bash
 # Clone the repository
-git clone [https://anonymous.4open.science/r/DockingAwareAttention-8B8E](https://anonymous.4open.science/r/DockingAwareAttention-8B8E) # Replace with actual GitHub link post-anonymization
+git clone [https://github.com/amitaysicherman/DockingAwareAttention](https://github.com/amitaysicherman/DockingAwareAttention) 
 cd DockingAwareAttention
 
 # Create and activate conda environment
@@ -175,12 +175,6 @@ If you find this code or our work useful for your research, please cite our pape
 @inproceedings{sicherman2025daa,
   title={Docking-Aware Attention: Dynamic Protein Representations through Molecular Context Integration},
   author={Sicherman, Amitay and Radinsky, Kira},
-  booktitle={Proceedings of the ACM International Conference on Information and Knowledge Management (CIKM)},
-  year={2025},
-  month={November},
-  address={Seoul, Korea},
-  doi={TBD.TBD},
-  isbn={978-1-4503-XXXX-X/18/06}
 }
 ```
 
