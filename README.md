@@ -148,9 +148,9 @@ Our model achieves state-of-the-art results, showing significant improvements ov
 
 | Method                      | All Top-5 (%) | Complex Top-5 (%) | Novel Top-5 (%) |
 |-----------------------------|---------------|-------------------|-----------------|
-| EC Tokens \\cite{Probst2022}     | 66.64         | 56.79             | 49.45           |
-| ESM3 \\cite{hayes2024simulating}   | 65.62         | 54.11             | 47.47           |
-| READRetro \\cite{kim2024readretro} | 66.44         | 55.98             | 48.76           |
+| EC Tokens      | 66.64         | 56.79             | 49.45           |
+| ESM3    | 65.62         | 54.11             | 47.47           |
+| READRetro | 66.44         | 55.98             | 48.76           |
 | **DAA (Ours)** | **71.48** | **62.20** | **55.54** |
 
 ### Generalization to Drug-Target Interaction (DTI)
