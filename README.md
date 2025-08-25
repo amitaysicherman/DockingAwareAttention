@@ -2,7 +2,7 @@
 
 **Official implementation of "Docking-Aware Attention: Dynamic Protein Representations through Molecular Context Integration".**
 
-[![Paper](https://img.shields.io/badge/paper-CIKM'25-B31B1B.svg)](https://link_to_your_paper.com) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Paper](https://img.shields.io/badge/paper-CIKM'25-B31B1B.svg)](https://doi.org/10.1145/3746252.3761061) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ---
 
